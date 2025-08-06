@@ -33,6 +33,14 @@ if (NOT raylib_FOUND) # If there's none, fetch and build raylib
   endif()
 endif()
 
+FetchContent_Declare(
+  raygui
+  GIT_REPOSITORY https://github.com/raysan5/raygui.git
+  GIT_TAG master
+)
+FetchContent_MakeAvailable(raygui)
+include_directories(${raygui_SOURCE_DIR}/src)
+
 find_package(spdlog QUIET)
 if(NOT spdlog_FOUND)
     FetchContent_Declare(
