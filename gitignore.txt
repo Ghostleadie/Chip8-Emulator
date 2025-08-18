@@ -18,3 +18,7 @@ CMakeUserPresets.json
 /.vs
 .vs/
 *.user
+
+# CLion
+/.idea
+.idea/
