@@ -1,10 +1,13 @@
-
-
 #include "chip8.h"
 #include "raylib.h"
-#define RAYGUI_IMPLEMENTATION
-#include "raygui.h"
+#include "gui.h"
 using namespace std;
+
+bool showDebugWindow = false; // Toggle as needed
+bool showFileDialog = false;
+std::string selectedFile;
+
+chip8* chip8::instance = nullptr;
 
 int main()
 {
@@ -12,60 +15,26 @@ int main()
     //--------------------------------------------------------------------------------------
     config cfg;
     Log::Init();
-	Chip8 chip8;
-    InitWindow(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale, "raylib [core] example - basic window");
-
+	chip8* chip8 = chip8::getInstance(cfg);
+    InitWindow(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale, cfg.name.c_str());
     SetTargetFPS(60);               // Set our game to run at 60 frames-per-second
     //--------------------------------------------------------------------------------------
+	//chip8.load_rom("F:\\Git Projects\\Chip8-Emulator\\rom\\IBM Logo.ch8");
 
-    bool showMessageBox = false;
 
     // Main game loop
-    while (!WindowShouldClose())    // Detect window close button or ESC key
+    while (!WindowShouldClose() || chip8->state == QUIT)    // Detect window close button or ESC key
     {
-        // Update
-        //----------------------------------------------------------------------------------
-        // TODO: Update your variables here
-        //----------------------------------------------------------------------------------
 
-        if (showMessageBox)
-            // Replace this line:
-            // if (GuiButton((Rectangle) { 24, 24, 120, 30 }, "#191#Show Message")) showMessageBox = true;
-
-            // With this fix:
-            Rectangle btnRect;
-        // Add this before using btnRect in the main loop
-        Rectangle btnRect;
-        btnRect.x = 24;
-        btnRect.y = 24;
-        btnRect.width = 120;
-        btnRect.height = 30;
-        if (GuiButton(btnRect, "#191#Show Message")) showMessageBox = true;
-            btnRect.x = 24;
-            btnRect.y = 24;
-            btnRect.width = 120;
-            btnRect.height = 30;
-            if (GuiButton(btnRect, "#191#Show Message")) showMessageBox = true;
-        {
-           
-        }
-
-        // Draw
-        //----------------------------------------------------------------------------------
         BeginDrawing();
-
-        ClearBackground(RAYWHITE);
-
-        DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
-
+        chip8->run();
+        // debug window end
         EndDrawing();
-        //----------------------------------------------------------------------------------
     }
 
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow();        // Close window and OpenGL context
     //--------------------------------------------------------------------------------------
-    LOG_WARN("test");
     return 0;
 }
