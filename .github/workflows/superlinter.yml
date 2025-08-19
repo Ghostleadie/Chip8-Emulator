@@ -32,6 +32,6 @@ jobs:
           DISABLE_LINTERS: PRETTIER
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_JSON_PRETTIER: false
-          VALIDATE_MARKDOWN_PRETTIER: false
+          VALIDATE_YAML_PRETTIER: false
           # To report GitHub Actions status checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
