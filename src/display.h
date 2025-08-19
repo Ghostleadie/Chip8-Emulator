@@ -1,5 +1,6 @@
 #pragma once
-enum screens {
+enum screens
+{
 	SCREEN_MAIN,
 	SCREEN_SETTINGS,
 	SCREEN_GAME,
@@ -7,7 +8,8 @@ enum screens {
 };
 
 
-class display {
+class display
+{
 public:
 	display();
 	display(int width, int height, int scale);

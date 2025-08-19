@@ -4,16 +4,14 @@
 #include "chip8.h"
 #include "raylib.h"
 #include <fstream>
-#include <iostream>
 
-using namespace std;
 
 chip8::chip8()
 {
 	// Initialize the Chip-8 system
 	pc = entryPoint; // Program counter starts at 0x200
-	I = 0;     // Index register
-	sp = 0;    // Stack pointer
+	I = 0;           // Index register
+	sp = 0;          // Stack pointer
 	draw_flag = false;
 	delay_timer = 0;
 	sound_timer = 0;
@@ -40,8 +38,8 @@ chip8::chip8(const config& cfg)
 {
 	// Initialize the Chip-8 system with configuration
 	pc = 0x200; // Program counter starts at 0x200
-	I = 0;     // Index register
-	sp = 0;    // Stack pointer
+	I = 0;      // Index register
+	sp = 0;     // Stack pointer
 	draw_flag = false;
 	delay_timer = 0;
 	sound_timer = 0;
@@ -67,17 +65,19 @@ chip8::chip8(const config& cfg)
 	disp.setFullscreen(false);
 }
 
-chip8 * chip8::getInstance()
+chip8* chip8::getInstance()
 {
-	if (instance == nullptr) {
+	if (instance == nullptr)
+	{
 		instance = new chip8();
 	}
 	return instance;
 }
 
-chip8 * chip8::getInstance(const config &cfg)
+chip8* chip8::getInstance(const config& cfg)
 {
-	if (instance == nullptr) {
+	if (instance == nullptr)
+	{
 		instance = new chip8(cfg);
 	}
 	return instance;
@@ -100,7 +100,7 @@ void chip8::run()
 	}
 
 	//debug options
-	if(IsKeyPressed(KEY_GRAVE))
+	if (IsKeyPressed(KEY_GRAVE))
 	{
 		showDebugWindow = !showDebugWindow;
 	}
@@ -114,7 +114,8 @@ void chip8::run()
 			guiInstance.run(instance);
 			break;
 		}
-		case chip8States::RUNNING: {
+		case chip8States::RUNNING:
+		{
 			// Fetch the next instruction
 			emulate_cycle();
 			break;
@@ -129,7 +130,8 @@ void chip8::run()
 
 void chip8::load_rom(const std::string& filepath)
 {
-	try {
+	try
+	{
 		// Open the file as a stream of binary and move the file pointer to the end
 		std::ifstream file(filepath, std::ios::binary | std::ios::ate);
 
@@ -142,7 +144,6 @@ void chip8::load_rom(const std::string& filepath)
 			// Go back to the beginning of the file and fill the buffer
 			file.seekg(0, std::ios::beg);
 			file.read(buffer, size);
-			
 
 			// Load the ROM contents into the Chip8's memory, starting at 0x200
 			for (long i = 0; i < size; ++i)
@@ -156,7 +157,8 @@ void chip8::load_rom(const std::string& filepath)
 			delete[] buffer;
 		}
 	}
-	catch (const std::exception& e) {
+	catch (const std::exception& e)
+	{
 		LOG_ERROR("Failed to load ROM: {}", e.what());
 	}
 }
@@ -169,27 +171,26 @@ void chip8::emulate_cycle()
 	executeinstruction(opcode);
 }
 
-void chip8::draw()
-{
-}
+void chip8::draw() {}
 
-void chip8::set_keys()
-{
-}
+void chip8::set_keys() {}
 
-uint16_t chip8::fetchinstruction() {
+uint16_t chip8::fetchinstruction()
+{
 	uint16_t opcode = (memory[pc] << 8) | (memory[pc + 1]);
 	LOG_INFO("Opcode: 0x{:X}", opcode);
 	opcode_history.push_back(opcode);
 	return opcode;
 }
 
-void chip8::executeinstruction(uint16_t opcode) {
+void chip8::executeinstruction(uint16_t opcode)
+{
 	// Decode and execute the opcode
 	switch (opcode & 0xF000)
 	{
 		case 0x0000: // 0x00E0, 0x00EE
-			switch (opcode & 0x00FF) {
+			switch (opcode & 0x00FF)
+			{
 				case 0x00E0:
 				{
 					//Clears the screen.
@@ -211,7 +212,8 @@ void chip8::executeinstruction(uint16_t opcode) {
 		case 0x6000: /* LD Vx, byte */ break;
 		case 0x7000: /* ADD Vx, byte */ break;
 		case 0x8000:
-			switch (opcode & 0x000F) {
+			switch (opcode & 0x000F)
+			{
 				case 0x0: /* LD Vx, Vy */ break;
 				case 0x1: /* OR Vx, Vy */ break;
 				case 0x2: /* AND Vx, Vy */ break;
@@ -221,7 +223,8 @@ void chip8::executeinstruction(uint16_t opcode) {
 				case 0x6: /* SHR Vx */ break;
 				case 0x7: /* SUBN Vx, Vy */ break;
 				case 0xE: /* SHL Vx */ break;
-				default: break;
+				default:
+					break;
 			}
 			break;
 		case 0x9000: /* SNE Vx, Vy */ break;
@@ -230,14 +233,17 @@ void chip8::executeinstruction(uint16_t opcode) {
 		case 0xC000: /* RND Vx, byte */ break;
 		case 0xD000: /* DRW Vx, Vy, nibble */ break;
 		case 0xE000:
-			switch (opcode & 0x00FF) {
+			switch (opcode & 0x00FF)
+			{
 				case 0x9E: /* SKP Vx */ break;
 				case 0xA1: /* SKNP Vx */ break;
-				default: break;
+				default:
+					break;
 			}
 			break;
 		case 0xF000:
-			switch (opcode & 0x00FF) {
+			switch (opcode & 0x00FF)
+			{
 				case 0x07: /* LD Vx, DT */ break;
 				case 0x0A: /* LD Vx, K */ break;
 				case 0x15: /* LD DT, Vx */ break;
@@ -247,7 +253,8 @@ void chip8::executeinstruction(uint16_t opcode) {
 				case 0x33: /* LD B, Vx */ break;
 				case 0x55: /* LD [I], Vx */ break;
 				case 0x65: /* LD Vx, [I] */ break;
-				default: break;
+				default:
+					break;
 			}
 			break;
 		default:
