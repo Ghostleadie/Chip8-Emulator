@@ -74,4 +74,4 @@ jobs:
           path: build/
       - name: Test
         working-directory: build
-        run: ctest --build-config ${{ matrix.build_type }}
+        run: ctest --build-config "${{ matrix.build_type }}"
