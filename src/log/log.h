@@ -19,15 +19,15 @@
 
 // __VA_OPT__ is meant to be C++20 standard, but standards are optional to businesses.
 #ifdef MINGW_BUILD
-#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __LINE__, format __VA_OPT__(,) __VA_ARGS__)
-#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __LINE__, format __VA_OPT__(,) __VA_ARGS__)
-#define LOG_ERR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __LINE__, format __VA_OPT__(,) __VA_ARGS__)
-#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, format __VA_OPT__(,) __VA_ARGS__)
+	#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
+	#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
+	#define LOG_ERR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
+	#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
 #else
-#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __LINE__, format , __VA_ARGS__)
-#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __LINE__, format , __VA_ARGS__)
-#define LOG_ERR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __LINE__, format , __VA_ARGS__)
-#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, format , __VA_ARGS__)
+	#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __LINE__, format, __VA_ARGS__)
+	#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __LINE__, format, __VA_ARGS__)
+	#define LOG_ERR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __LINE__, format, __VA_ARGS__)
+	#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, format, __VA_ARGS__)
 #endif
 
 typedef enum
@@ -132,13 +132,11 @@ void log_log(LogLevel level, const char* file, int line, const char* fmt, ...)
 
 	// If it's a real console, WriteConsoleA works; else, fall back to WriteFile
 	DWORD mode;
-	if (g_logger.hConsole != NULL &&
-		g_logger.hConsole != INVALID_HANDLE_VALUE &&
-		GetConsoleMode(g_logger.hConsole, &mode))
+	if (g_logger.hConsole != NULL && g_logger.hConsole != INVALID_HANDLE_VALUE && GetConsoleMode(g_logger.hConsole, &mode))
 	{
 		WriteConsoleA(g_logger.hConsole, buffer, to_write, &written, NULL);
 	}
-	#ifdef DEBUG_BUILD // IDE MODE
+#ifdef DEBUG_BUILD // IDE MODE
 	else
 	{
 		HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -147,7 +145,7 @@ void log_log(LogLevel level, const char* file, int line, const char* fmt, ...)
 			WriteFile(hOut, buffer, to_write, &written, NULL);
 		}
 	}
-	#endif
+#endif
 
 	SetConsoleTextAttribute(g_logger.hConsole, FOREGROUND_RED | FOREGROUND_GREEN | FOREGROUND_BLUE);
 
@@ -157,7 +155,6 @@ void log_log(LogLevel level, const char* file, int line, const char* fmt, ...)
 	{
 		ExitProcess(1);
 	}
-
 }
 
 #endif // LOGGER_IMPLEMENTATION
