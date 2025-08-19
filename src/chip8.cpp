@@ -2,12 +2,17 @@
 //
 
 #include "chip8.h"
+
+#include <chrono>
+#include <fstream>
+
 #include "raylib.h"
 #include "log/log.h"
 
-#include <fstream>
 
-chip8::chip8()
+
+
+chip8::chip8() : randGen(std::chrono::system_clock::now().time_since_epoch().count())
 {
 	// Initialize the Chip-8 system
 	pc = entryPoint; // Program counter starts at 0x200
@@ -16,6 +21,8 @@ chip8::chip8()
 	draw_flag = false;
 	delay_timer = 0;
 	sound_timer = 0;
+
+	randByte = std::uniform_int_distribution<uint8_t>(0, 255U);
 
 	memset(V, 0, sizeof(V));
 	memset(stack, 0, sizeof(stack));
@@ -34,7 +41,7 @@ chip8::chip8()
 	memset(keypad, 0, sizeof(keypad));
 }
 
-chip8::chip8(const config& cfg)
+chip8::chip8(const config& cfg) : randGen(std::chrono::system_clock::now().time_since_epoch().count())
 {
 	// Initialize the Chip-8 system with configuration
 	pc = 0x200; // Program counter starts at 0x200
@@ -43,6 +50,8 @@ chip8::chip8(const config& cfg)
 	draw_flag = false;
 	delay_timer = 0;
 	sound_timer = 0;
+
+	randByte = std::uniform_int_distribution<uint8_t>(0, 255U);
 
 	memset(V, 0, sizeof(V));
 	memset(stack, 0, sizeof(stack));
@@ -117,7 +126,7 @@ void chip8::run()
 		case chip8States::RUNNING:
 		{
 			// Fetch the next instruction
-			emulate_cycle();
+			emulateCycle();
 			break;
 		}
 		default:
@@ -128,7 +137,7 @@ void chip8::run()
 	}
 }
 
-void chip8::load_rom(const std::string& filepath)
+void chip8::loadRom(const std::string& filepath)
 {
 	try
 	{
@@ -163,19 +172,19 @@ void chip8::load_rom(const std::string& filepath)
 	}
 }
 
-void chip8::emulate_cycle()
+void chip8::emulateCycle()
 {
-	uint16_t opcode = fetchinstruction();
+	uint16_t opcode = fetchInstruction();
 
 	pc += 2; // Move to the next instruction
-	executeinstruction(opcode);
+	executeInstruction(opcode);
 }
 
 void chip8::draw() {}
 
-void chip8::set_keys() {}
+void chip8::setKeys() {}
 
-uint16_t chip8::fetchinstruction()
+uint16_t chip8::fetchInstruction()
 {
 	uint16_t opcode = (memory[pc] << 8) | (memory[pc + 1]);
 	LOG("Opcode: 0x&u", opcode);
@@ -183,7 +192,7 @@ uint16_t chip8::fetchinstruction()
 	return opcode;
 }
 
-void chip8::executeinstruction(uint16_t opcode)
+void chip8::executeInstruction(uint16_t opcode)
 {
 	// Decode and execute the opcode
 	switch (opcode & 0xF000)
@@ -199,61 +208,198 @@ void chip8::executeinstruction(uint16_t opcode)
 				}
 				case 0x00EE:
 				{
+					--sp; // Decrement stack pointer
+					pc = stack[sp]; // Set program counter to the address at the top of the stack
 					break;
 				}
 				default: /* SYS addr */
 					break;
 			}
 			break;
-		case 0x1000: /* JP addr */
+		/* JP addr */
+		case 0x1000:
+		{
+			//gets the address from the opcode (the lowest 12 bits) and sets the program counter to that address. stack is not required for this operation.
+			uint16_t address = opcode & 0x0FFFu;
+			pc = address;
 			break;
-		case 0x2000: /* CALL addr */
+		}
+		/* CALL addr */
+		case 0x2000:
+		{
+			uint16_t address = opcode & 0x0FFFu;
+
+			stack[sp] = pc;
+			++sp;
+			pc = address;
 			break;
-		case 0x3000: /* SE Vx, byte */
+		}
+		/* SE Vx, byte */
+		case 0x3000:
+		{
+			const uint8_t Vx = getVxRegistry(opcode);
+			uint8_t byte = opcode & 0x00FFu;
+
+			if (V[Vx] == byte)
+			{
+				pc += 2; // Skip the next instruction if Vx == byte
+			}
+
 			break;
-		case 0x4000: /* SNE Vx, byte */
+		}
+		/* SNE Vx, byte */
+		case 0x4000:
+		{
+			const uint8_t Vx = getVxRegistry(opcode);
+			uint8_t byte = opcode & 0x00FFu;
+
+			if (V[Vx] != byte)
+			{
+				pc += 2; // Skip the next instruction if Vx != byte
+			}
 			break;
-		case 0x5000: /* SE Vx, Vy */
+		}
+		/* SE Vx, Vy */
+		case 0x5000:
+		{
+			const uint8_t Vx = getVxRegistry(opcode);
+			const uint8_t Vy = getVyRegistry(opcode);
+
+			if (V[Vx] == V[Vy])
+			{
+				pc += 2; // Skip the next instruction if Vx == Vy
+			}
 			break;
-		case 0x6000: /* LD Vx, byte */
+		}
+		/* LD Vx, byte */
+		case 0x6000:
+		{
+			const uint8_t Vx = getVxRegistry(opcode);
+			uint8_t byte = opcode & 0x00FFu;
+			V[Vx] = byte; // Load byte into Vx
 			break;
-		case 0x7000: /* ADD Vx, byte */
+		}
+		/* ADD Vx, byte */
+		case 0x7000:
+		{
+			const uint8_t Vx = getVxRegistry(opcode);
+			uint8_t byte = opcode & 0x00FFu;
+			V[Vx] += byte; // Add byte to Vx
 			break;
+		}
 		case 0x8000:
 			switch (opcode & 0x000F)
 			{
-				case 0x0: /* LD Vx, Vy */
+				/* LD Vx, Vy */
+				case 0x0:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					const uint8_t Vy = getVyRegistry(opcode);
+					V[Vx] = V[Vy]; // Load value of Vy into Vx
 					break;
-				case 0x1: /* OR Vx, Vy */
+				}
+				/* OR Vx, Vy */
+				case 0x1:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					const uint8_t Vy = getVyRegistry(opcode);
+					V[Vx] |= V[Vy]; // Bitwise OR Vx and Vy
 					break;
-				case 0x2: /* AND Vx, Vy */
+				}
+				/* AND Vx, Vy */
+				case 0x2:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					const uint8_t Vy = getVyRegistry(opcode);
+					V[Vx] &= V[Vy]; // Bitwise AND Vx and Vy
 					break;
-				case 0x3: /* XOR Vx, Vy */
+				}
+				/* XOR Vx, Vy */
+				case 0x3:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					const uint8_t Vy = getVyRegistry(opcode);
+					V[Vx] ^= V[Vy]; // Bitwise XOR Vx and Vy
 					break;
-				case 0x4: /* ADD Vx, Vy */
+				}
+				/* ADD Vx, Vy */
+				case 0x4:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					const uint8_t Vy = getVyRegistry(opcode);
+					uint16_t sum = V[Vx] + V[Vy];
+					V[0xF] = (sum > 0xFF) ? 1 : 0; // Set carry flag if overflow occurs
+					V[Vx] = sum & 0xFF; // Store the result in Vx, keeping it within 8 bits
 					break;
-				case 0x5: /* SUB Vx, Vy */
+				}
+				/* SUB Vx, Vy */
+				case 0x5:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					const uint8_t Vy = getVyRegistry(opcode);
+
+					V[0xF] = (Vx > Vy) ? 1 : 0; // Set the carry flag if Vx > Vy
+					V[Vx] -= V[Vy];// Subtract Vy from Vx
 					break;
-				case 0x6: /* SHR Vx */
+				}
+				/* SHR Vx */
+				case 0x6:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+
+					V[0xF] = V[Vx] & 0x1u; // Set the carry flag to the least significant bit
+					V[Vx] >>= 1; // Shift Vx right by 1 bit (division by 2)
+
 					break;
-				case 0x7: /* SUBN Vx, Vy */
+				}
+				/* SUBN Vx, Vy */
+				case 0x7:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					const uint8_t Vy = getVyRegistry(opcode);
+					V[0xF] = (Vy > Vx) ? 1 : 0; // Set the carry flag if Vy > Vx
+					V[Vx] = V[Vy] - V[Vx]; // Subtract Vx from Vy
 					break;
-				case 0xE: /* SHL Vx */
+				}
+				/* SHL Vx */
+				case 0xE:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					V[0xF] = (V[Vx] & 0x80u) >> 7u; // Set the carry flag to the most significant bit
+					V[Vx] <<= 1; // Shift Vx left by 1 bit (multiplication by 2)
 					break;
+				}
 				default:
 					break;
 			}
 			break;
-		case 0x9000: /* SNE Vx, Vy */
+		/* SNE Vx, Vy */
+		case 0x9000:
+		{
+			const uint8_t Vx = getVxRegistry(opcode);
+			const uint8_t Vy = getVyRegistry(opcode);
+			if (V[Vx] != V[Vy])
+			{
+				pc += 2; // Skip the next instruction if Vx != Vy
+			}
 			break;
-		case 0xA000: /* LD I, addr */
+		}
+		/* LD I, addr */
+		case 0xA000:
+		{
+			const uint16_t address = opcode & 0x0FFFu;
+			I = address; // Load the address into the index register I
 			break;
-		case 0xB000: /* JP V0, addr */
+		}
+		/* JP V0, addr */
+		case 0xB000:
+		{
+			const uint16_t address = opcode & 0x0FFFu;
+			pc = address + V[0]; // Jump to the address plus the value of V0
 			break;
-		case 0xC000: /* RND Vx, byte */
-			break;
-		case 0xD000: /* DRW Vx, Vy, nibble */
-			break;
+		}
+		case 0xC000: /* RND Vx, byte */ break;
+		case 0xD000: /* DRW Vx, Vy, nibble */ break;
 		case 0xE000:
 			switch (opcode & 0x00FF)
 			{

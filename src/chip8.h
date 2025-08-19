@@ -37,31 +37,50 @@ public:
 	static chip8* getInstance();
 	static chip8* getInstance(const config& cfg);
 	void run();
-	void load_rom(const std::string& filepath);
-	void emulate_cycle();
+	void loadRom(const std::string& filepath);
+	void emulateCycle();
 	void draw();
-	void set_keys();
+	void setKeys();
 
 	chip8(const chip8& obj) = delete;
 
-	uint16_t fetchinstruction();
-	void decodeinstruction(uint16_t opcode);
-	void executeinstruction(uint16_t opcode);
+	uint16_t fetchInstruction();
+	void decodeInstruction(uint16_t opcode);
+	void executeInstruction(uint16_t opcode);
 
 public:
 	static chip8* instancePTR;
 	chip8States state = MENU;
 
 	uint8_t memory[4096];
+	// General purpose registers (V0-VF)
 	uint8_t V[16];
+
+	// Index register
 	uint16_t I;
+
+	// Program counter
 	uint16_t pc;
+
+	// Stack for subroutine calls
 	uint16_t stack[16];
+
+	// Stack pointer
 	uint8_t sp;
+
+	// Delay timer
 	uint8_t delay_timer;
+
+	// Sound timer
 	uint8_t sound_timer;
+
+	// Graphics buffer (64x32 pixels)
 	uint8_t gfx[64 * 32];
+
+	// Flag to indicate if the screen needs to be redrawn
 	bool draw_flag;
+
+	// Keypad state (hex-based input)
 	uint8_t keypad[16];
 	std::vector<uint16_t> opcode_history;
 
@@ -99,7 +118,19 @@ public:
 private:
 	static chip8* instance;
 
+	std::default_random_engine randGen;
+	std::uniform_int_distribution<uint8_t> randByte;
+
+	inline uint8_t getVxRegistry(const uint16_t opcode)
+	{
+		//And bitwise operation to extract the Vx register from the opcode then bit shifting right by 8 bits
+		return (opcode & 0x0F00u) >> 8u; // Extract Vx from opcode
+	}
+
+	inline uint8_t getVyRegistry(const uint16_t opcode)
+	{
+		//And bitwise operation to extract the Vy register from the opcode then bit shifting right by 4 bits
+		return (opcode & 0x00F0u) >> 4u; // Extract Vx from opcode
+	}
 
 };
-
-// TODO: Reference additional headers your program requires here.
