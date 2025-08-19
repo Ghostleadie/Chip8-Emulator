@@ -34,5 +34,6 @@ jobs:
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_JSON_PRETTIER: false
           VALIDATE_YAML_PRETTIER: false
+          VALIDATE_GIT_COMMITLINT: false
           # To report GitHub Actions status checks
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
