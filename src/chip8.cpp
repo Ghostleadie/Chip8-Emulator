@@ -62,9 +62,9 @@ chip8::chip8(const config& cfg)
 	memset(gfx, 0, sizeof(display));
 	memset(keypad, 0, sizeof(keypad));
 
-	display.setTitle("CHIP-8 Emulator");
-	display.setSize(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale);
-	display.setFullscreen(false);
+	disp.setTitle("CHIP-8 Emulator");
+	disp.setSize(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale);
+	disp.setFullscreen(false);
 }
 
 chip8 * chip8::getInstance()
@@ -105,13 +105,13 @@ void chip8::run()
 		showDebugWindow = !showDebugWindow;
 	}
 
-	gui.drawChip8DebugWindow(*instance, &showDebugWindow);
+	guiInstance.drawChip8DebugWindow(*instance, &showDebugWindow);
 
 	switch (state)
 	{
 		case chip8States::MENU:
 		{
-			gui.run(instance);
+			guiInstance.run(instance);
 			break;
 		}
 		case chip8States::RUNNING: {

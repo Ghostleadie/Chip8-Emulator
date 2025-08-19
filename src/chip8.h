@@ -65,8 +65,8 @@ public:
     uint8_t keypad[16];
 	std::vector<uint16_t> opcode_history;
 
-	display display;
-	gui gui;
+	display disp;
+	gui guiInstance;
 
 	// Font set for CHIP-8, each character is 5x5 pixels
 	uint8_t fontSet[80] =
