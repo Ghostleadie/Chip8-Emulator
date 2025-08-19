@@ -81,7 +81,7 @@ jobs:
     - name: Upload Build Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Chip8-Emulator
+        name: Chip8-Emulator-${{ matrix.os }}-${{ matrix.c_compiler }}
         path: build/
 
     - name: Test
