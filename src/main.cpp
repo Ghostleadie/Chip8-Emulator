@@ -22,7 +22,7 @@ int main()
 	InitWindow(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale, cfg.name.c_str());
 	SetTargetFPS(60); // Set our game to run at 60 frames-per-second
 	//--------------------------------------------------------------------------------------
-	//chip8.load_rom("F:\\Git Projects\\Chip8-Emulator\\rom\\IBM Logo.ch8");
+	// chip8.load_rom("F:\\Git Projects\\Chip8-Emulator\\rom\\IBM Logo.ch8");
 
 	// Main game loop
 	while (!WindowShouldClose() || chip8->state == QUIT) // Detect window close button or ESC key

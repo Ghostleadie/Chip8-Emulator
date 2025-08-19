@@ -9,10 +9,9 @@
 #include <sstream>
 #include <nfd.h>
 
-
 gui::gui()
 {
-	//chip8Instance = chip8::getInstance();
+	// chip8Instance = chip8::getInstance();
 }
 
 void gui::run(chip8* instance)
@@ -26,13 +25,12 @@ void gui::run(chip8* instance)
 		{
 			instance->load_rom(instance->filepath);
 			instance->state = chip8States::RUNNING; // Set state to RUNNING after loading ROM
-			//chip8.fetchinstruction();
+													// chip8.fetchinstruction();
 		}
 		if (menuResult == MENU_QUIT)
 		{
-			//break;
+			// break;
 		}
-
 	}
 }
 
@@ -61,7 +59,7 @@ mainMenuResult gui::drawMainMenu(bool& showFileDialog, std::string& selectedFile
 	{
 		result = MENU_SETTINGS;
 		bool showSettingsMenu = false;
-		//drawSettingsMenu(showSettingsMenu, temp);
+		// drawSettingsMenu(showSettingsMenu, temp);
 	}
 	btnY += 40;
 	if (GuiButton({ menuBox.x + 60, btnY, 120, 30 }, "About"))

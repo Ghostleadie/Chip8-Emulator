@@ -7,13 +7,12 @@
 
 #include <fstream>
 
-
 chip8::chip8()
 {
 	// Initialize the Chip-8 system
 	pc = entryPoint; // Program counter starts at 0x200
-	I = 0;           // Index register
-	sp = 0;          // Stack pointer
+	I = 0;			 // Index register
+	sp = 0;			 // Stack pointer
 	draw_flag = false;
 	delay_timer = 0;
 	sound_timer = 0;
@@ -33,15 +32,14 @@ chip8::chip8()
 	// resetting display and keypad
 	memset(gfx, 0, sizeof(display));
 	memset(keypad, 0, sizeof(keypad));
-
 }
 
 chip8::chip8(const config& cfg)
 {
 	// Initialize the Chip-8 system with configuration
 	pc = 0x200; // Program counter starts at 0x200
-	I = 0;      // Index register
-	sp = 0;     // Stack pointer
+	I = 0;		// Index register
+	sp = 0;		// Stack pointer
 	draw_flag = false;
 	delay_timer = 0;
 	sound_timer = 0;
@@ -101,7 +99,7 @@ void chip8::run()
 		}
 	}
 
-	//debug options
+	// debug options
 	if (IsKeyPressed(KEY_GRAVE))
 	{
 		showDebugWindow = !showDebugWindow;
@@ -195,7 +193,7 @@ void chip8::executeinstruction(uint16_t opcode)
 			{
 				case 0x00E0:
 				{
-					//Clears the screen.
+					// Clears the screen.
 					memset(gfx, 0, sizeof(display));
 					break;
 				}
@@ -203,42 +201,66 @@ void chip8::executeinstruction(uint16_t opcode)
 				{
 					break;
 				}
-				default: /* SYS addr */ break;
+				default: /* SYS addr */
+					break;
 			}
 			break;
-		case 0x1000: /* JP addr */ break;
-		case 0x2000: /* CALL addr */ break;
-		case 0x3000: /* SE Vx, byte */ break;
-		case 0x4000: /* SNE Vx, byte */ break;
-		case 0x5000: /* SE Vx, Vy */ break;
-		case 0x6000: /* LD Vx, byte */ break;
-		case 0x7000: /* ADD Vx, byte */ break;
+		case 0x1000: /* JP addr */
+			break;
+		case 0x2000: /* CALL addr */
+			break;
+		case 0x3000: /* SE Vx, byte */
+			break;
+		case 0x4000: /* SNE Vx, byte */
+			break;
+		case 0x5000: /* SE Vx, Vy */
+			break;
+		case 0x6000: /* LD Vx, byte */
+			break;
+		case 0x7000: /* ADD Vx, byte */
+			break;
 		case 0x8000:
 			switch (opcode & 0x000F)
 			{
-				case 0x0: /* LD Vx, Vy */ break;
-				case 0x1: /* OR Vx, Vy */ break;
-				case 0x2: /* AND Vx, Vy */ break;
-				case 0x3: /* XOR Vx, Vy */ break;
-				case 0x4: /* ADD Vx, Vy */ break;
-				case 0x5: /* SUB Vx, Vy */ break;
-				case 0x6: /* SHR Vx */ break;
-				case 0x7: /* SUBN Vx, Vy */ break;
-				case 0xE: /* SHL Vx */ break;
+				case 0x0: /* LD Vx, Vy */
+					break;
+				case 0x1: /* OR Vx, Vy */
+					break;
+				case 0x2: /* AND Vx, Vy */
+					break;
+				case 0x3: /* XOR Vx, Vy */
+					break;
+				case 0x4: /* ADD Vx, Vy */
+					break;
+				case 0x5: /* SUB Vx, Vy */
+					break;
+				case 0x6: /* SHR Vx */
+					break;
+				case 0x7: /* SUBN Vx, Vy */
+					break;
+				case 0xE: /* SHL Vx */
+					break;
 				default:
 					break;
 			}
 			break;
-		case 0x9000: /* SNE Vx, Vy */ break;
-		case 0xA000: /* LD I, addr */ break;
-		case 0xB000: /* JP V0, addr */ break;
-		case 0xC000: /* RND Vx, byte */ break;
-		case 0xD000: /* DRW Vx, Vy, nibble */ break;
+		case 0x9000: /* SNE Vx, Vy */
+			break;
+		case 0xA000: /* LD I, addr */
+			break;
+		case 0xB000: /* JP V0, addr */
+			break;
+		case 0xC000: /* RND Vx, byte */
+			break;
+		case 0xD000: /* DRW Vx, Vy, nibble */
+			break;
 		case 0xE000:
 			switch (opcode & 0x00FF)
 			{
-				case 0x9E: /* SKP Vx */ break;
-				case 0xA1: /* SKNP Vx */ break;
+				case 0x9E: /* SKP Vx */
+					break;
+				case 0xA1: /* SKNP Vx */
+					break;
 				default:
 					break;
 			}
@@ -246,15 +268,24 @@ void chip8::executeinstruction(uint16_t opcode)
 		case 0xF000:
 			switch (opcode & 0x00FF)
 			{
-				case 0x07: /* LD Vx, DT */ break;
-				case 0x0A: /* LD Vx, K */ break;
-				case 0x15: /* LD DT, Vx */ break;
-				case 0x18: /* LD ST, Vx */ break;
-				case 0x1E: /* ADD I, Vx */ break;
-				case 0x29: /* LD F, Vx */ break;
-				case 0x33: /* LD B, Vx */ break;
-				case 0x55: /* LD [I], Vx */ break;
-				case 0x65: /* LD Vx, [I] */ break;
+				case 0x07: /* LD Vx, DT */
+					break;
+				case 0x0A: /* LD Vx, K */
+					break;
+				case 0x15: /* LD DT, Vx */
+					break;
+				case 0x18: /* LD ST, Vx */
+					break;
+				case 0x1E: /* ADD I, Vx */
+					break;
+				case 0x29: /* LD F, Vx */
+					break;
+				case 0x33: /* LD B, Vx */
+					break;
+				case 0x55: /* LD [I], Vx */
+					break;
+				case 0x65: /* LD Vx, [I] */
+					break;
 				default:
 					break;
 			}

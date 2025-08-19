@@ -17,4 +17,10 @@ target_precompile_headers(Chip8-Emulator PUBLIC pch.h)
 target_include_directories(${PROJECT_NAME} PRIVATE ${nativefiledialog-extended_SOURCE_DIR}/include)
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib nfd::nfd)
 
+# Add DEBUG_BUILD only when building the Debug configuration
+target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:DEBUG_BUILD>)
+
+# Adds MINGW_BUILD define to this target only when using MinGW
+target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<BOOL:${MINGW}>:MINGW_BUILD>)
+
 # TODO: Add tests and install targets if needed.

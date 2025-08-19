@@ -10,7 +10,6 @@ enum screens
 	SCREEN_EXIT
 };
 
-
 class display
 {
 public:
@@ -26,5 +25,4 @@ public:
 	void setFullscreen(bool fullscreen);
 
 private:
-
 };
