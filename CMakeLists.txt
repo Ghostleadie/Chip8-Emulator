@@ -4,6 +4,8 @@
 cmake_minimum_required (VERSION 3.8)
 include(FetchContent)
 
+set(CMAKE_CXX_STANDARD 20)
+
 # Enable Hot Reload for MSVC compilers if supported.
 if (POLICY CMP0141)
   cmake_policy(SET CMP0141 NEW)
@@ -47,22 +49,6 @@ if (NOT raygui_FOUND)
   endif()
 endif()
 include_directories(${raygui_SOURCE_DIR}/src)
-
-# spdlog
-find_package(spdlog QUIET)
-if (NOT spdlog_FOUND)
-  FetchContent_Declare(
-    spdlog
-    DOWNLOAD_EXTRACT_TIMESTAMP OFF
-    URL https://github.com/gabime/spdlog/archive/refs/tags/v1.15.2.zip
-  )
-  FetchContent_GetProperties(spdlog)
-  if (NOT spdlog_POPULATED)
-    set(FETCHCONTENT_QUIET NO)
-    FetchContent_MakeAvailable(spdlog)
-  endif()
-endif()
-set_target_properties(spdlog PROPERTIES FOLDER "Dependencies")
 
 # nativefiledialog-extended
 find_package(nfd QUIET)

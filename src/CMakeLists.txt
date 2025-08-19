@@ -2,8 +2,10 @@
 # project specific logic here.
 #
 
+include_directories(${PROJECT_SOURCE_DIR}/src)
+
 # Add source to this project's executable.
-add_executable (Chip8-Emulator "chip8.cpp" "chip8.h" "log/log.cpp" "log/log.h" "main.cpp" "gui.cpp" "gui.h" "display.cpp" "display.h" )
+add_executable(Chip8-Emulator "chip8.cpp" "chip8.h" "log/log.h" "main.cpp" "gui.cpp" "gui.h" "display.cpp" "display.h")
 
 if (CMAKE_VERSION VERSION_GREATER 3.12)
   set_property(TARGET Chip8-Emulator PROPERTY CXX_STANDARD 20)
@@ -13,6 +15,6 @@ target_precompile_headers(Chip8-Emulator PUBLIC pch.h)
 
 
 target_include_directories(${PROJECT_NAME} PRIVATE ${nativefiledialog-extended_SOURCE_DIR}/include)
-target_link_libraries(${PROJECT_NAME} PRIVATE raylib spdlog nfd::nfd)
+target_link_libraries(${PROJECT_NAME} PRIVATE raylib nfd::nfd)
 
 # TODO: Add tests and install targets if needed.

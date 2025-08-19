@@ -1,4 +1,7 @@
 #pragma once
+
+#include <string>
+
 enum screens
 {
 	SCREEN_MAIN,

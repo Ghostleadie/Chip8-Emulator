@@ -1,6 +1,8 @@
 #pragma once
 #include "raygui.h"
 
+#include <string>
+
 class chip8;
 // Simple main menu state
 enum mainMenuResult {

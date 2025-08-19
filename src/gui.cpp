@@ -3,6 +3,8 @@
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
 #include "chip8.h"
+#include "log/log.h"
+
 #include <string>
 #include <sstream>
 #include <nfd.h>
@@ -95,19 +97,18 @@ mainMenuResult gui::drawMainMenu(bool& showFileDialog, std::string& selectedFile
 		nfdresult_t result = NFD_OpenDialogU8_With(&outPath, &args);
 		if (result == NFD_OKAY)
 		{
-			LOG_INFO("Rom Path: {}", outPath);
+			LOG("Rom Path: &s", outPath);
 			selectedFile = outPath; // Store the selected file path
 			NFD_FreePathU8(outPath);
 		}
 		else if (result == NFD_CANCEL)
 		{
-			LOG_INFO("User pressed cancel.");
+			LOG("User pressed cancel.");
 			puts("User pressed cancel.");
 		}
 		else
 		{
-			LOG_ERROR("{} Error: {}", __FUNCTION__, NFD_GetError());
-
+			LOG_ERR("gui::drawMainMenu Error: &s", NFD_GetError());
 		}
 
 		showFileDialog = false;
