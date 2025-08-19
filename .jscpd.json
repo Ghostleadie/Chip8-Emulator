@@ -1,0 +1,11 @@
+{
+  "threshold": 10,
+  "reporters": ["console"],
+  "minTokens": 50,
+  "exclude": [
+    "node_modules/**",
+    "build/**",
+    "dist/**",
+    ".git/**"
+  ]
+}
