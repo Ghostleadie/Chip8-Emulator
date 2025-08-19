@@ -5,7 +5,7 @@
 #include "spdlog/sinks/stdout_color_sinks.h"
 #include "spdlog/fmt/bundled/printf.h"
 
-class Log
+class log
 {
 public:
 	static void Init();
@@ -16,8 +16,8 @@ private:
 	static std::shared_ptr<spdlog::logger> m_Logger;
 };
 
-#define LOG_TRACE(...)		::Log::GetLogger()->trace(__VA_ARGS__)
-#define LOG_INFO(...)		::Log::GetLogger()->info(__VA_ARGS__)
-#define LOG_WARN(...)		::Log::GetLogger()->warn(__VA_ARGS__)
-#define LOG_ERROR(...)		::Log::GetLogger()->error(__VA_ARGS__)
-#define LOG_FATAL(...)		::Log::GetLogger()->fatal(__VA_ARGS__)
+#define LOG_TRACE(...)		::log::GetLogger()->trace(__VA_ARGS__)
+#define LOG_INFO(...)		::log::GetLogger()->info(__VA_ARGS__)
+#define LOG_WARN(...)		::log::GetLogger()->warn(__VA_ARGS__)
+#define LOG_ERROR(...)		::log::GetLogger()->error(__VA_ARGS__)
+#define LOG_FATAL(...)		::log::GetLogger()->fatal(__VA_ARGS__)

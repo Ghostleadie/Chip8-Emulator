@@ -1,8 +1,8 @@
-#include "Log.h"
+#include "log.h"
 
-std::shared_ptr<spdlog::logger> Log::m_Logger;
+std::shared_ptr<spdlog::logger> log::m_Logger;
 
-void Log::Init()
+void log::Init()
 {
 	spdlog::set_pattern("%^[%T] %n: %v%$");
 	m_Logger = spdlog::stdout_color_mt("Emulator");
