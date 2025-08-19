@@ -3,6 +3,8 @@
 
 #include "chip8.h"
 #include "raylib.h"
+#include "log/log.h"
+
 #include <fstream>
 
 
@@ -26,9 +28,9 @@ chip8::chip8()
 		memory[fontSetStartAddress + i] = fontSet[i];
 	}
 
-	LOG_INFO("Font loaded into memory starting at address 0x{:X}", fontSetStartAddress);
+	LOG("Font loaded into memory starting at address 0x%U", fontSetStartAddress);
 
-	//resetting display and keypad
+	// resetting display and keypad
 	memset(gfx, 0, sizeof(display));
 	memset(keypad, 0, sizeof(keypad));
 
@@ -54,9 +56,9 @@ chip8::chip8(const config& cfg)
 		memory[fontSetStartAddress + i] = fontSet[i];
 	}
 
-	LOG_INFO("Font loaded into memory starting at address 0x{:X}", fontSetStartAddress);
+	LOG("Font loaded into memory starting at address 0x&U", fontSetStartAddress);
 
-	//resetting display and keypad
+	// resetting display and keypad
 	memset(gfx, 0, sizeof(display));
 	memset(keypad, 0, sizeof(keypad));
 
@@ -90,12 +92,12 @@ void chip8::run()
 		if (state == chip8States::RUNNING)
 		{
 			state = chip8States::PAUSED;
-			LOG_INFO("Paused the emulator");
+			LOG("Paused the emulator");
 		}
 		else if (state == chip8States::PAUSED)
 		{
 			state = chip8States::RUNNING;
-			LOG_INFO("Resumed the emulator");
+			LOG("Resumed the emulator");
 		}
 	}
 
@@ -122,7 +124,7 @@ void chip8::run()
 		}
 		default:
 		{
-			LOG_ERROR("Invalid state: {}", static_cast<int>(state));
+			LOG_ERR("Invalid state: %i", static_cast<int>(state));
 			break;
 		}
 	}
@@ -151,7 +153,7 @@ void chip8::load_rom(const std::string& filepath)
 				memory[entryPoint + i] = buffer[i];
 			}
 			file.seekg(0, file.end);
-			LOG_INFO("Loaded ROM: {} ({} bytes)", filepath, (float)file.tellg());
+			LOG("Loaded ROM: %s (%f.3 bytes)", filepath.c_str(), (float)file.tellg());
 			file.close();
 			// Free the buffer
 			delete[] buffer;
@@ -159,7 +161,7 @@ void chip8::load_rom(const std::string& filepath)
 	}
 	catch (const std::exception& e)
 	{
-		LOG_ERROR("Failed to load ROM: {}", e.what());
+		LOG_ERR("Failed to load ROM: %s", e.what());
 	}
 }
 
@@ -178,7 +180,7 @@ void chip8::set_keys() {}
 uint16_t chip8::fetchinstruction()
 {
 	uint16_t opcode = (memory[pc] << 8) | (memory[pc + 1]);
-	LOG_INFO("Opcode: 0x{:X}", opcode);
+	LOG("Opcode: 0x&u", opcode);
 	opcode_history.push_back(opcode);
 	return opcode;
 }
@@ -258,7 +260,7 @@ void chip8::executeinstruction(uint16_t opcode)
 			}
 			break;
 		default:
-			LOG_ERROR("{} Unknown opcode: {:#04X}", __FUNCTION__, opcode);
+			LOG_ERR("chip8::executeinstruction Unknown opcode: &u", opcode);
 			break;
 	}
 }

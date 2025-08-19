@@ -1,3 +1,7 @@
+
+#define LOGGER_IMPLEMENTATION
+#include "log/log.h"
+
 #include "chip8.h"
 #include "raylib.h"
 #include "gui.h"
@@ -14,7 +18,6 @@ int main()
 	// Initialization
 	//--------------------------------------------------------------------------------------
 	config cfg;
-	log::Init();
 	chip8* chip8 = chip8::getInstance(cfg);
 	InitWindow(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale, cfg.name.c_str());
 	SetTargetFPS(60); // Set our game to run at 60 frames-per-second
