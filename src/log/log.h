@@ -113,7 +113,7 @@ void log_log(LogLevel level, const char* file, const char* function, int line, c
 		}
 	}
 
-	current_pos += fast_sprintf(current_pos, "[%s] [%s:%s] [Line %d] ", LOG_LEVEL_STRINGS[level], file_basename, function , line);
+	current_pos += fast_sprintf(current_pos, "[%s] [%s:%s] [Line %d] ", LOG_LEVEL_STRINGS[level], file_basename, function, line);
 
 	va_list args;
 	va_start(args, fmt);
