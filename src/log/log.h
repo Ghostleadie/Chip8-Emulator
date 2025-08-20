@@ -19,15 +19,15 @@
 
 // __VA_OPT__ is meant to be C++20 standard, but standards are optional to businesses.
 #ifdef MINGW_BUILD
-	#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
-	#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
-	#define LOG_ERR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
-	#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
+	#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __FUNCTION__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
+	#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __FUNCTION__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
+	#define LOG_ERROR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __FUNCTION__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
+	#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __FUNCTION__, __LINE__, format __VA_OPT__(, ) __VA_ARGS__)
 #else
-	#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __LINE__, format, __VA_ARGS__)
-	#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __LINE__, format, __VA_ARGS__)
-	#define LOG_ERR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __LINE__, format, __VA_ARGS__)
-	#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __LINE__, format, __VA_ARGS__)
+	#define LOG(format, ...) log_log(LOG_LEVEL_INFO, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+	#define LOG_WARNING(format, ...) log_log(LOG_LEVEL_WARN, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+	#define LOG_ERROR(format, ...) log_log(LOG_LEVEL_ERROR, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
+	#define LOG_FATAL(format, ...) log_log(LOG_LEVEL_FATAL, __FILE__, __FUNCTION__, __LINE__, format, __VA_ARGS__)
 #endif
 
 typedef enum
@@ -38,7 +38,7 @@ typedef enum
 	LOG_LEVEL_FATAL
 } LogLevel;
 
-void log_log(LogLevel level, const char* file, int line, const char* fmt, ...);
+void log_log(LogLevel level, const char* file, const char* function, int line, const char* fmt, ...);
 
 #endif // LOGGER_H
 
@@ -89,7 +89,7 @@ int fast_sprintf(char* dest, const char* fmt, ...)
  * @param fmt The format string (printf-style).
  * @param ... Variable arguments for the format string.
  */
-void log_log(LogLevel level, const char* file, int line, const char* fmt, ...)
+void log_log(LogLevel level, const char* file, const char* function, int line, const char* fmt, ...)
 {
 	if (InterlockedCompareExchange(&g_logger.initialized, 1, 0) == 0)
 	{
@@ -113,7 +113,7 @@ void log_log(LogLevel level, const char* file, int line, const char* fmt, ...)
 		}
 	}
 
-	current_pos += fast_sprintf(current_pos, "[%s] [%s:%d] ", LOG_LEVEL_STRINGS[level], file_basename, line);
+	current_pos += fast_sprintf(current_pos, "[%s] [%s:%s] [Line %d] ", LOG_LEVEL_STRINGS[level], file_basename, function , line);
 
 	va_list args;
 	va_start(args, fmt);
