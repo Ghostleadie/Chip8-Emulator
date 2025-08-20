@@ -39,6 +39,7 @@ chip8::chip8() : randGen(std::chrono::system_clock::now().time_since_epoch().cou
 	// resetting display and keypad
 	memset(gfx, 0, sizeof(display));
 	memset(keypad, 0, sizeof(keypad));
+
 }
 
 chip8::chip8(const config& cfg) : randGen(std::chrono::system_clock::now().time_since_epoch().count())

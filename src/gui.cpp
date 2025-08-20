@@ -9,6 +9,7 @@
 #include <sstream>
 #include <nfd.h>
 
+
 gui::gui()
 {
 	// chip8Instance = chip8::getInstance();
@@ -23,9 +24,8 @@ void gui::run(chip8* instance)
 
 		if (menuResult == MENU_LOAD && !instance->filepath.empty())
 		{
-			instance->load_rom(instance->filepath);
+			instance->loadRom(instance->filepath);
 			instance->state = chip8States::RUNNING; // Set state to RUNNING after loading ROM
-													// chip8.fetchinstruction();
 		}
 		if (menuResult == MENU_QUIT)
 		{
