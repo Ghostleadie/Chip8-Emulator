@@ -19,3 +19,4 @@ CMakeUserPresets.json
 .vs/
 *.user
 /.idea
+/src/.idea
