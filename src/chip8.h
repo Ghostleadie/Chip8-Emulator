@@ -6,7 +6,7 @@
 
 struct config
 {
-	config(){}
+	config() {}
 	config(const int width, const int height, const int scale)
 		: windowScale(scale), chip8Width(width), chip8Height(height) {}
 	const int windowScale = 20;
@@ -20,7 +20,7 @@ struct settings
 	const int fps = 60;
 	const int soundFrequency = 44100;
 	const int soundBufferSize = 512;
-	const int soundChannels = 2;    // Stereo
+	const int soundChannels = 2;	// Stereo
 	const int soundSampleSize = 16; // 16-bit samples
 };
 
@@ -91,8 +91,7 @@ public:
 	gui guiInstance;
 
 	// Font set for CHIP-8, each character is 5x5 pixels
-	uint8_t fontSet[80] =
-	{
+	uint8_t fontSet[80] = {
 		0xF0, 0x90, 0x90, 0x90, 0xF0, // 0
 		0x20, 0x60, 0x20, 0x20, 0x70, // 1
 		0xF0, 0x10, 0xF0, 0x80, 0xF0, // 2
@@ -126,14 +125,13 @@ private:
 
 	inline uint8_t getVxRegistry(const uint16_t opcode)
 	{
-		//And bitwise operation to extract the Vx register from the opcode then bit shifting right by 8 bits
+		// And bitwise operation to extract the Vx register from the opcode then bit shifting right by 8 bits
 		return (opcode & 0x0F00u) >> 8u; // Extract Vx from opcode
 	}
 
 	inline uint8_t getVyRegistry(const uint16_t opcode)
 	{
-		//And bitwise operation to extract the Vy register from the opcode then bit shifting right by 4 bits
+		// And bitwise operation to extract the Vy register from the opcode then bit shifting right by 4 bits
 		return (opcode & 0x00F0u) >> 4u; // Extract Vx from opcode
 	}
-
 };

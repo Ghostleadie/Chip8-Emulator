@@ -8,14 +8,13 @@
 
 #include "raylib.h"
 
-
 chip8::chip8()
 	: randGen(std::chrono::system_clock::now().time_since_epoch().count())
 {
 	// Initialize the Chip-8 system
 	pc = entryPoint; // Program counter starts at 0x200
-	I = 0;           // Index register
-	sp = 0;          // Stack pointer
+	I = 0;			 // Index register
+	sp = 0;			 // Stack pointer
 	draw_flag = false;
 	delayTimer = 0;
 	soundTimer = 0;
@@ -37,7 +36,6 @@ chip8::chip8()
 	// resetting display and keypad
 	memset(screen, 0, sizeof(screen));
 	memset(keypad, 0, sizeof(keypad));
-
 }
 
 chip8::chip8(const config& cfg)
@@ -45,8 +43,8 @@ chip8::chip8(const config& cfg)
 {
 	// Initialize the Chip-8 system with configuration
 	pc = 0x200; // Program counter starts at 0x200
-	I = 0;      // Index register
-	sp = 0;     // Stack pointer
+	I = 0;		// Index register
+	sp = 0;		// Stack pointer
 	draw_flag = false;
 	delayTimer = 0;
 	soundTimer = 0;
@@ -69,7 +67,7 @@ chip8::chip8(const config& cfg)
 	memset(screen, 0, sizeof(screen));
 	memset(keypad, 0, sizeof(keypad));
 
-	//this->cfg = cfg;
+	// this->cfg = cfg;
 
 	disp.setTitle("CHIP-8 Emulator");
 	disp.setSize(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale);
@@ -219,22 +217,22 @@ void chip8::updateKeys()
 	// A 0 B F
 
 	int keyMap[16] = {
-		KEY_X,     // 0
+		KEY_X,	   // 0
 		KEY_ONE,   // 1
 		KEY_TWO,   // 2
 		KEY_THREE, // 3
-		KEY_Q,     // 4
-		KEY_W,     // 5
-		KEY_E,     // 6
-		KEY_A,     // 7
-		KEY_S,     // 8
-		KEY_D,     // 9
-		KEY_Z,     // A
-		KEY_C,     // B
+		KEY_Q,	   // 4
+		KEY_W,	   // 5
+		KEY_E,	   // 6
+		KEY_A,	   // 7
+		KEY_S,	   // 8
+		KEY_D,	   // 9
+		KEY_Z,	   // A
+		KEY_C,	   // B
 		KEY_FOUR,  // C
-		KEY_R,     // D
-		KEY_F,     // E
-		KEY_V      // F
+		KEY_R,	   // D
+		KEY_F,	   // E
+		KEY_V	   // F
 	};
 
 	for (int i = 0; i < 16; ++i)
@@ -268,7 +266,7 @@ void chip8::executeInstruction(uint16_t opcode)
 				}
 				case 0x00EE:
 				{
-					--sp;           // Decrement stack pointer
+					--sp;			// Decrement stack pointer
 					pc = stack[sp]; // Set program counter to the address at the top of the stack
 					break;
 				}
@@ -281,7 +279,7 @@ void chip8::executeInstruction(uint16_t opcode)
 		/* JP addr */
 		case 0x1000:
 		{
-			//gets the address from the opcode (the lowest 12 bits) and sets the program counter to that address. stack is not required for this operation.
+			// gets the address from the opcode (the lowest 12 bits) and sets the program counter to that address. stack is not required for this operation.
 			uint16_t address = opcode & 0x0FFFu;
 			pc = address;
 			break;
@@ -390,8 +388,8 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t Vy = getVyRegistry(opcode);
 					uint16_t sum = V[Vx] + V[Vy];
-					V[0xF] = (sum > 0xFF) ? 1 : 0; // Set carry flag if overflow occurs
-					V[Vx] = static_cast<uint8_t>(sum & 0xFF);            // Store the result in Vx, keeping it within 8 bits
+					V[0xF] = (sum > 0xFF) ? 1 : 0;			  // Set carry flag if overflow occurs
+					V[Vx] = static_cast<uint8_t>(sum & 0xFF); // Store the result in Vx, keeping it within 8 bits
 					break;
 				}
 				/* SUB Vx, Vy */
@@ -410,7 +408,7 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t Vx = getVxRegistry(opcode);
 
 					V[0xF] = V[Vx] & 0x1u; // Set the carry flag to the least significant bit
-					V[Vx] >>= 1;           // Shift Vx right by 1 bit (division by 2)
+					V[Vx] >>= 1;		   // Shift Vx right by 1 bit (division by 2)
 
 					break;
 				}
@@ -428,7 +426,7 @@ void chip8::executeInstruction(uint16_t opcode)
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
 					V[0xF] = (V[Vx] & 0x80u) >> 7u; // Set the carry flag to the most significant bit
-					V[Vx] <<= 1;                    // Shift Vx left by 1 bit (multiplication by 2)
+					V[Vx] <<= 1;					// Shift Vx left by 1 bit (multiplication by 2)
 					break;
 				}
 				default:
@@ -477,8 +475,8 @@ void chip8::executeInstruction(uint16_t opcode)
 			uint8_t height = opcode & 0x000Fu; // Get the height of the sprite to draw
 
 			// need to replace without hard coded values
-			//uint8_t xPos = V[Vx] % 64; // Wrap around the screen width
-			//uint8_t yPos = V[Vy] % 32; // Wrap around the screen height
+			// uint8_t xPos = V[Vx] % 64; // Wrap around the screen width
+			// uint8_t yPos = V[Vy] % 32; // Wrap around the screen height
 
 			V[0xF] = 0; // Clear the collision flag
 			for (uint8_t row = 0; row < height; ++row)
@@ -642,7 +640,7 @@ void chip8::executeInstruction(uint16_t opcode)
 				/* LD B, Vx */
 				case 0x33:
 				{
-					//takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.
+					// takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.
 					uint8_t value = V[getVxRegistry(opcode)];
 					memory[I + 2] = value % 10;
 					value /= 10;
