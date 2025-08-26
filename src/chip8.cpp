@@ -7,22 +7,20 @@
 #include <fstream>
 
 #include "raylib.h"
-#include "log/log.h"
 
 
-
-
-chip8::chip8() : randGen(std::chrono::system_clock::now().time_since_epoch().count())
+chip8::chip8()
+	: randGen(std::chrono::system_clock::now().time_since_epoch().count())
 {
 	// Initialize the Chip-8 system
 	pc = entryPoint; // Program counter starts at 0x200
-	I = 0;			 // Index register
-	sp = 0;			 // Stack pointer
+	I = 0;           // Index register
+	sp = 0;          // Stack pointer
 	draw_flag = false;
-	delay_timer = 0;
-	sound_timer = 0;
+	delayTimer = 0;
+	soundTimer = 0;
 
-	randByte = std::uniform_int_distribution<uint8_t>(0, 255U);
+	randByte = std::uniform_int_distribution<int>(0, 255);
 
 	memset(V, 0, sizeof(V));
 	memset(stack, 0, sizeof(stack));
@@ -37,22 +35,23 @@ chip8::chip8() : randGen(std::chrono::system_clock::now().time_since_epoch().cou
 	LOG("Font loaded into memory starting at address 0x%U", fontSetStartAddress);
 
 	// resetting display and keypad
-	memset(gfx, 0, sizeof(display));
+	memset(screen, 0, sizeof(screen));
 	memset(keypad, 0, sizeof(keypad));
 
 }
 
-chip8::chip8(const config& cfg) : randGen(std::chrono::system_clock::now().time_since_epoch().count())
+chip8::chip8(const config& cfg)
+	: randGen(std::chrono::system_clock::now().time_since_epoch().count())
 {
 	// Initialize the Chip-8 system with configuration
 	pc = 0x200; // Program counter starts at 0x200
-	I = 0;		// Index register
-	sp = 0;		// Stack pointer
+	I = 0;      // Index register
+	sp = 0;     // Stack pointer
 	draw_flag = false;
-	delay_timer = 0;
-	sound_timer = 0;
+	delayTimer = 0;
+	soundTimer = 0;
 
-	randByte = std::uniform_int_distribution<uint8_t>(0, 255U);
+	randByte = std::uniform_int_distribution<int>(0, 255);
 
 	memset(V, 0, sizeof(V));
 	memset(stack, 0, sizeof(stack));
@@ -67,30 +66,38 @@ chip8::chip8(const config& cfg) : randGen(std::chrono::system_clock::now().time_
 	LOG("Font loaded into memory starting at address 0x&U", fontSetStartAddress);
 
 	// resetting display and keypad
-	memset(gfx, 0, sizeof(display));
+	memset(screen, 0, sizeof(screen));
 	memset(keypad, 0, sizeof(keypad));
+
+	//this->cfg = cfg;
 
 	disp.setTitle("CHIP-8 Emulator");
 	disp.setSize(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale);
 	disp.setFullscreen(false);
 }
 
-chip8* chip8::getInstance()
+// Internal storage for the global chip8 instance (shared by all getters)
+static chip8*& chip8_instance_slot()
 {
-	if (instance == nullptr)
-	{
-		instance = new chip8();
-	}
-	return instance;
+	static chip8* p = nullptr;
+	return p;
 }
 
-chip8* chip8::getInstance(const config& cfg)
+// Preferred reference getters
+chip8& chip8::Get()
 {
-	if (instance == nullptr)
-	{
-		instance = new chip8(cfg);
-	}
-	return instance;
+	chip8*& p = chip8_instance_slot();
+	if (!p)
+		p = new chip8();
+	return *p;
+}
+
+chip8& chip8::Get(const config& cfg)
+{
+	chip8*& p = chip8_instance_slot();
+	if (!p)
+		p = new chip8(cfg);
+	return *p;
 }
 
 void chip8::run()
@@ -115,35 +122,42 @@ void chip8::run()
 		showDebugWindow = !showDebugWindow;
 	}
 
-	guiInstance.drawChip8DebugWindow(*instance, &showDebugWindow);
-
 	switch (state)
 	{
 		case chip8States::MENU:
 		{
-			guiInstance.run(instance);
+			guiInstance.run(this);
 			break;
 		}
 		case chip8States::RUNNING:
 		{
 			// Fetch the next instruction
 			emulateCycle();
+			disp.updateDisplay();
+
+			break;
+		}
+		case chip8States::PAUSED:
+		{
+			// Do nothing, just wait for unpause
 			break;
 		}
 		default:
 		{
-			LOG_ERR("Invalid state: %i", static_cast<int>(state));
+			LOG_ERROR("Invalid state: %i", static_cast<int>(state));
 			break;
 		}
 	}
+
+	guiInstance.drawChip8DebugWindow(*this, &showDebugWindow);
 }
 
-void chip8::loadRom(const std::string& filepath)
+void chip8::loadRom(const std::string& romFilepath)
 {
 	try
 	{
 		// Open the file as a stream of binary and move the file pointer to the end
-		std::ifstream file(filepath, std::ios::binary | std::ios::ate);
+		std::ifstream file(romFilepath, std::ios::binary | std::ios::ate);
 
 		if (file.is_open())
 		{
@@ -161,7 +175,8 @@ void chip8::loadRom(const std::string& filepath)
 				memory[entryPoint + i] = buffer[i];
 			}
 			file.seekg(0, file.end);
-			LOG("Loaded ROM: %s (%f.3 bytes)", filepath.c_str(), (float)file.tellg());
+			const char* pathname = romFilepath.c_str();
+			LOG("Loaded ROM: %s (%f.3 bytes)", pathname, static_cast<float>(file.tellg()));
 			file.close();
 			// Free the buffer
 			delete[] buffer;
@@ -169,32 +184,75 @@ void chip8::loadRom(const std::string& filepath)
 	}
 	catch (const std::exception& e)
 	{
-		LOG_ERR("Failed to load ROM: %s", e.what());
+		LOG_ERROR("Failed to load ROM: %s", e.what());
 	}
 }
 
 void chip8::emulateCycle()
 {
+	updateKeys();
+
 	uint16_t opcode = fetchInstruction();
 
 	pc += 2; // Move to the next instruction
 	executeInstruction(opcode);
+
+	// Decrement the delay timer if it's been set
+	if (delayTimer > 0)
+	{
+		--delayTimer;
+	}
+
+	// Decrement the sound timer if it's been set
+	if (soundTimer > 0)
+	{
+		--soundTimer;
+	}
 }
 
-void chip8::draw() {}
+void chip8::updateKeys()
+{
+	// CHIP-8 keypad layout:
+	// 1 2 3 C
+	// 4 5 6 D
+	// 7 8 9 E
+	// A 0 B F
 
-void chip8::setKeys() {}
+	int keyMap[16] = {
+		KEY_X,     // 0
+		KEY_ONE,   // 1
+		KEY_TWO,   // 2
+		KEY_THREE, // 3
+		KEY_Q,     // 4
+		KEY_W,     // 5
+		KEY_E,     // 6
+		KEY_A,     // 7
+		KEY_S,     // 8
+		KEY_D,     // 9
+		KEY_Z,     // A
+		KEY_C,     // B
+		KEY_FOUR,  // C
+		KEY_R,     // D
+		KEY_F,     // E
+		KEY_V      // F
+	};
+
+	for (int i = 0; i < 16; ++i)
+	{
+		keypad[i] = IsKeyDown(keyMap[i]);
+	}
+}
 
 uint16_t chip8::fetchInstruction()
 {
-	uint16_t opcode = (memory[pc] << 8) | (memory[pc + 1]);
-	LOG("Opcode: 0x&u", opcode);
+	const uint16_t opcode = (memory[pc] << 8u) | (memory[pc + 1]);
 	opcode_history.push_back(opcode);
 	return opcode;
 }
 
 void chip8::executeInstruction(uint16_t opcode)
 {
+	LOG("Opcode: 0x%x", opcode);
 	// Decode and execute the opcode
 	switch (opcode & 0xF000)
 	{
@@ -204,16 +262,19 @@ void chip8::executeInstruction(uint16_t opcode)
 				case 0x00E0:
 				{
 					// Clears the screen.
-					memset(gfx, 0, sizeof(display));
+					memset(screen, 0, sizeof(screen));
+
 					break;
 				}
 				case 0x00EE:
 				{
-					--sp; // Decrement stack pointer
+					--sp;           // Decrement stack pointer
 					pc = stack[sp]; // Set program counter to the address at the top of the stack
 					break;
 				}
-				default: /* SYS addr */
+				default:
+					LOG_ERROR("Unknown opcode [0x0000]: 0x%X", opcode);
+					/* SYS addr */
 					break;
 			}
 			break;
@@ -330,7 +391,7 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t Vy = getVyRegistry(opcode);
 					uint16_t sum = V[Vx] + V[Vy];
 					V[0xF] = (sum > 0xFF) ? 1 : 0; // Set carry flag if overflow occurs
-					V[Vx] = sum & 0xFF; // Store the result in Vx, keeping it within 8 bits
+					V[Vx] = static_cast<uint8_t>(sum & 0xFF);            // Store the result in Vx, keeping it within 8 bits
 					break;
 				}
 				/* SUB Vx, Vy */
@@ -339,8 +400,8 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t Vy = getVyRegistry(opcode);
 
-					V[0xF] = (Vx > Vy) ? 1 : 0; // Set the carry flag if Vx > Vy
-					V[Vx] -= V[Vy];// Subtract Vy from Vx
+					V[0xF] = (V[Vx] > V[Vy]) ? 1 : 0;			 // Set the carry flag if Vx > Vy
+					V[Vx] = static_cast<uint8_t>(V[Vx] - V[Vy]); // Subtract Vy from Vx
 					break;
 				}
 				/* SHR Vx */
@@ -349,7 +410,7 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t Vx = getVxRegistry(opcode);
 
 					V[0xF] = V[Vx] & 0x1u; // Set the carry flag to the least significant bit
-					V[Vx] >>= 1; // Shift Vx right by 1 bit (division by 2)
+					V[Vx] >>= 1;           // Shift Vx right by 1 bit (division by 2)
 
 					break;
 				}
@@ -358,8 +419,8 @@ void chip8::executeInstruction(uint16_t opcode)
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t Vy = getVyRegistry(opcode);
-					V[0xF] = (Vy > Vx) ? 1 : 0; // Set the carry flag if Vy > Vx
-					V[Vx] = V[Vy] - V[Vx]; // Subtract Vx from Vy
+					V[0xF] = (V[Vy] > V[Vx]) ? 1 : 0;			 // Set the carry flag if Vy > Vx
+					V[Vx] = static_cast<uint8_t>(V[Vy] - V[Vx]); // Subtract Vx from Vy
 					break;
 				}
 				/* SHL Vx */
@@ -367,10 +428,11 @@ void chip8::executeInstruction(uint16_t opcode)
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
 					V[0xF] = (V[Vx] & 0x80u) >> 7u; // Set the carry flag to the most significant bit
-					V[Vx] <<= 1; // Shift Vx left by 1 bit (multiplication by 2)
+					V[Vx] <<= 1;                    // Shift Vx left by 1 bit (multiplication by 2)
 					break;
 				}
 				default:
+					LOG_ERROR("Unknown opcode [0x8000]: 0x%X", opcode);
 					break;
 			}
 			break;
@@ -399,46 +461,225 @@ void chip8::executeInstruction(uint16_t opcode)
 			pc = address + V[0]; // Jump to the address plus the value of V0
 			break;
 		}
-		case 0xC000: /* RND Vx, byte */ break;
-		case 0xD000: /* DRW Vx, Vy, nibble */ break;
+		/* RND Vx, byte */
+		case 0xC000:
+		{
+			const uint8_t Vx = getVxRegistry(opcode);
+			uint8_t byte = opcode & 0x00FFu;
+			V[Vx] = static_cast<uint8_t>(randByte(randGen)) & byte; // Generate a random byte and AND it with the byte from the opcode
+			break;
+		}
+		/* DRW Vx, Vy, nibble */
+		case 0xD000:
+		{
+			uint8_t Vx = getVxRegistry(opcode);
+			uint8_t Vy = getVyRegistry(opcode);
+			uint8_t height = opcode & 0x000Fu; // Get the height of the sprite to draw
+
+			// need to replace without hard coded values
+			//uint8_t xPos = V[Vx] % 64; // Wrap around the screen width
+			//uint8_t yPos = V[Vy] % 32; // Wrap around the screen height
+
+			V[0xF] = 0; // Clear the collision flag
+			for (uint8_t row = 0; row < height; ++row)
+			{
+				uint8_t spriteRow = memory[I + row]; // Get the sprite row from memory
+				for (uint8_t col = 0; col < 8; ++col)
+				{
+					if ((spriteRow & (0x80 >> col)) != 0) // Check if the pixel is set
+					{
+						uint8_t x = (V[Vx] + col) % 64; // Wrap around the screen width
+						uint8_t y = (V[Vy] + row) % 32; // Wrap around the screen height
+
+						if (screen[x][y] == 1) // Check for collision
+						{
+							V[0xF] = 1; // Set collision flag
+						}
+						screen[x][y] ^= 1; // Toggle the pixel on the display
+					}
+				}
+			}
+
+			break;
+		}
 		case 0xE000:
 			switch (opcode & 0x00FF)
 			{
-				case 0x9E: /* SKP Vx */
+				/* SKP Vx */
+				case 0x9E:
+				{
+					const uint8_t key = V[getVxRegistry(opcode)];
+					if (keypad[key])
+					{
+						pc += 2; // Skip the next instruction if the key in Vx is pressed
+					}
 					break;
-				case 0xA1: /* SKNP Vx */
+				}
+				/* SKNP Vx */
+				case 0xA1:
+				{
+					const uint8_t key = V[getVxRegistry(opcode)];
+					if (!keypad[key])
+					{
+						pc += 2; // Skip the next instruction if the key in Vx is pressed
+					}
 					break;
+				}
 				default:
+					LOG_ERROR("Unknown opcode [0xE000]: 0x%X", opcode);
 					break;
 			}
 			break;
 		case 0xF000:
 			switch (opcode & 0x00FF)
 			{
-				case 0x07: /* LD Vx, DT */
+				/* LD Vx, DT */
+				case 0x07:
+				{
+					V[getVxRegistry(opcode)] = delayTimer; // Load the value of the delay timer into Vx
 					break;
-				case 0x0A: /* LD Vx, K */
+				}
+				/* LD Vx, K */
+				case 0x0A:
+				{
+					uint8_t Vx = getVxRegistry(opcode);
+					if (keypad[0])
+					{
+						V[Vx] = 0;
+					}
+					else if (keypad[1])
+					{
+						V[Vx] = 1;
+					}
+					else if (keypad[2])
+					{
+						V[Vx] = 2;
+					}
+					else if (keypad[3])
+					{
+						V[Vx] = 3;
+					}
+					else if (keypad[4])
+					{
+						V[Vx] = 4;
+					}
+					else if (keypad[5])
+					{
+						V[Vx] = 5;
+					}
+					else if (keypad[6])
+					{
+						V[Vx] = 6;
+					}
+					else if (keypad[7])
+					{
+						V[Vx] = 7;
+					}
+					else if (keypad[8])
+					{
+						V[Vx] = 8;
+					}
+					else if (keypad[9])
+					{
+						V[Vx] = 9;
+					}
+					else if (keypad[10])
+					{
+						V[Vx] = 10;
+					}
+					else if (keypad[11])
+					{
+						V[Vx] = 11;
+					}
+					else if (keypad[12])
+					{
+						V[Vx] = 12;
+					}
+					else if (keypad[13])
+					{
+						V[Vx] = 13;
+					}
+					else if (keypad[14])
+					{
+						V[Vx] = 14;
+					}
+					else if (keypad[15])
+					{
+						V[Vx] = 15;
+					}
+					else
+					{
+						pc -= 2;
+					}
 					break;
-				case 0x15: /* LD DT, Vx */
+				}
+				/* LD DT, Vx */
+				case 0x15:
+				{
+					delayTimer = V[getVxRegistry(opcode)]; // Load the value of Vx into the delay timer
 					break;
-				case 0x18: /* LD ST, Vx */
+				}
+				/* LD ST, Vx */
+				case 0x18:
+				{
+					soundTimer = V[getVxRegistry(opcode)];
 					break;
-				case 0x1E: /* ADD I, Vx */
+				}
+				/* ADD I, Vx */
+				case 0x1E:
+				{
+					I += V[getVxRegistry(opcode)]; // Add the value of Vx to the index register I
 					break;
-				case 0x29: /* LD F, Vx */
+				}
+				/* LD F, Vx */
+				case 0x29:
+				{
+					uint8_t key = V[getVxRegistry(opcode)];
+
+					I = fontSetStartAddress + (key * 5); // Set I to the address of the font character corresponding to Vx
 					break;
-				case 0x33: /* LD B, Vx */
+				}
+				/* LD B, Vx */
+				case 0x33:
+				{
+					//takes the decimal value of Vx, and places the hundreds digit in memory at location in I, the tens digit at location I+1, and the ones digit at location I+2.
+					uint8_t value = V[getVxRegistry(opcode)];
+					memory[I + 2] = value % 10;
+					value /= 10;
+					memory[I + 1] = value % 10;
+					value /= 10;
+					memory[I] = value % 10;
 					break;
-				case 0x55: /* LD [I], Vx */
+				}
+				/* LD [I], Vx */
+				case 0x55:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					for (uint8_t i = 0; i <= Vx; ++i)
+					{
+						memory[I + i] = V[i]; // Store the values of V0 to Vx in memory starting at address I
+					}
 					break;
-				case 0x65: /* LD Vx, [I] */
+				}
+				/* LD Vx, [I] */
+				case 0x65:
+				{
+					const uint8_t Vx = getVxRegistry(opcode);
+					for (uint8_t i = 0; i <= Vx; ++i)
+					{
+						V[i] = memory[I + i]; // Store the values of V0 to Vx in memory starting at address I
+					}
 					break;
+				}
 				default:
+				{
+					LOG_ERROR("Unknown opcode: 0x%x", opcode);
 					break;
+				}
 			}
 			break;
 		default:
-			LOG_ERR("chip8::executeinstruction Unknown opcode: &u", opcode);
+			LOG_ERROR("Unknown opcode: 0x%x", opcode);
 			break;
 	}
 }

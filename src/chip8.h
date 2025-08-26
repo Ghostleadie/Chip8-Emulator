@@ -6,7 +6,10 @@
 
 struct config
 {
-	const int windowScale = 30;
+	config(){}
+	config(const int width, const int height, const int scale)
+		: windowScale(scale), chip8Width(width), chip8Height(height) {}
+	const int windowScale = 20;
 	const int chip8Width = 64;
 	const int chip8Height = 32;
 	const std::string name = "Chip-8 Emulator";
@@ -34,25 +37,25 @@ class chip8
 public:
 	chip8();
 	chip8(const config& cfg);
-	static chip8* getInstance();
-	static chip8* getInstance(const config& cfg);
+	static chip8& Get();
+	static chip8& Get(const config& cfg);
 	void run();
 	void loadRom(const std::string& filepath);
 	void emulateCycle();
-	void draw();
-	void setKeys();
+	void updateKeys();
 
 	chip8(const chip8& obj) = delete;
 
 	uint16_t fetchInstruction();
-	void decodeInstruction(uint16_t opcode);
 	void executeInstruction(uint16_t opcode);
 
 public:
 	static chip8* instancePTR;
+
 	chip8States state = MENU;
 
 	uint8_t memory[4096];
+
 	// General purpose registers (V0-VF)
 	uint8_t V[16];
 
@@ -69,13 +72,13 @@ public:
 	uint8_t sp;
 
 	// Delay timer
-	uint8_t delay_timer;
+	uint8_t delayTimer;
 
 	// Sound timer
-	uint8_t sound_timer;
+	uint8_t soundTimer;
 
 	// Graphics buffer (64x32 pixels)
-	uint8_t gfx[64 * 32];
+	uint8_t screen[64][32];
 
 	// Flag to indicate if the screen needs to be redrawn
 	bool draw_flag;
@@ -117,9 +120,9 @@ public:
 	bool showDebugWindow = false; // Toggle for debug window
 private:
 	static chip8* instance;
-
+	config cfg;
 	std::default_random_engine randGen;
-	std::uniform_int_distribution<uint8_t> randByte;
+	std::uniform_int_distribution<int> randByte;
 
 	inline uint8_t getVxRegistry(const uint16_t opcode)
 	{
