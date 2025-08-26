@@ -18,7 +18,7 @@ public:
 	//~Display() {};
 	void clear();
 	void draw();
-	void drawPixel(const int x,const int y);
+	void drawPixel(const int x, const int y);
 	void updateDisplay();
 	void setTitle(const std::string& title);
 	void setScale(int scale);

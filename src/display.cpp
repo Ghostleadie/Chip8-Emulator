@@ -28,7 +28,7 @@ void display::draw()
 
 void display::drawPixel(const int x, const int y)
 {
-	DrawRectangle(x * scale, y * scale,scale,scale, WHITE);
+	DrawRectangle(x * scale, y * scale, scale, scale, WHITE);
 }
 
 void display::updateDisplay()
@@ -59,6 +59,6 @@ void display::setFullscreen(bool fullscreen)
 	}
 	else
 	{
-		//SetWindowedMode();
+		// SetWindowedMode();
 	}
 }
