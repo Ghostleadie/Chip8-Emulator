@@ -8,7 +8,6 @@
 #include <sstream>
 #include <nfd.h>
 
-
 gui::gui()
 {
 	// chip8Instance = chip8::getInstance();
@@ -16,6 +15,7 @@ gui::gui()
 
 void gui::run(chip8* instance)
 {
+	ClearBackground(BLACK);
 	if (instance->state == MENU)
 	{
 
@@ -35,6 +35,7 @@ void gui::run(chip8* instance)
 
 mainMenuResult gui::drawMainMenu(bool& showFileDialog, std::string& selectedFile)
 {
+
 	ClearBackground(RAYWHITE);
 	mainMenuResult result = MENU_NONE;
 	bool showSettingsMenu = false;
@@ -52,6 +53,7 @@ mainMenuResult gui::drawMainMenu(bool& showFileDialog, std::string& selectedFile
 	{
 		showFileDialog = true;
 		result = MENU_LOAD;
+		ClearBackground(BLACK);
 	}
 	btnY += 40;
 	if (GuiButton({ menuBox.x + 60, btnY, 120, 30 }, "Settings"))
@@ -94,14 +96,14 @@ mainMenuResult gui::drawMainMenu(bool& showFileDialog, std::string& selectedFile
 		nfdresult_t result = NFD_OpenDialogU8_With(&outPath, &args);
 		if (result == NFD_OKAY)
 		{
-			LOG("Rom Path: %s", outPath);
+			const char* path = outPath;
+			LOG("Rom Path: %s", path);
 			selectedFile = outPath; // Store the selected file path
 			NFD_FreePathU8(outPath);
 		}
 		else if (result == NFD_CANCEL)
 		{
 			LOG("User pressed cancel.");
-			puts("User pressed cancel.");
 		}
 		else
 		{
@@ -136,9 +138,9 @@ void gui::drawChip8DebugWindow(const chip8& cpu, bool* showWindow)
 	GuiLabel({ x + 200, y, 180, 20 }, TextFormat("I:  0x%04X", cpu.I));
 	y += 25;
 	GuiLabel({ x, y, 180, 20 }, TextFormat("SP: 0x%02X", cpu.sp));
-	GuiLabel({ x + 200, y, 180, 20 }, TextFormat("Delay Timer: %d", cpu.delay_timer));
+	GuiLabel({ x + 200, y, 180, 20 }, TextFormat("Delay Timer: %d", cpu.delayTimer));
 	y += 25;
-	GuiLabel({ x, y, 180, 20 }, TextFormat("Sound Timer: %d", cpu.sound_timer));
+	GuiLabel({ x, y, 180, 20 }, TextFormat("Sound Timer: %d", cpu.soundTimer));
 
 	y += 30;
 	GuiLabel({ x, y, 360, 20 }, "V Registers:");

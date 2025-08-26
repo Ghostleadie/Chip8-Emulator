@@ -19,11 +19,12 @@ class gui
 public:
 	gui();
 	void run(chip8* instance);
-	static mainMenuResult drawMainMenu(bool& showFileDialog, std::string& selectedFile);
+	mainMenuResult drawMainMenu(bool& showFileDialog, std::string& selectedFile);
 	void drawChip8DebugWindow(const chip8& cpu, bool* showWindow);
 	void fileDialogBox(bool& showFileDialog, std::string& selectedFile);
 	void drawSettingsMenu(bool& showSettingsMenu, float& volume);
 
 private:
 	bool showFileDialog = false; // Toggle for file dialog
+	bool menuDrawn = false;
 };
