@@ -20,3 +20,4 @@ CMakeUserPresets.json
 *.user
 /.idea
 /src/.idea
+/rom
