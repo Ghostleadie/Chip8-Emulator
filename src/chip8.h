@@ -7,12 +7,13 @@
 struct config
 {
 	config() {}
-	config(const int width, const int height, const int scale)
-		: windowScale(scale), chip8Width(width), chip8Height(height) {}
-	const int windowScale = 20;
+	config(const int width, const int height, const int scale, const int Hz)
+		: windowScale(scale), chip8Width(width), chip8Height(height), cpuHz(Hz) {}
+	const int windowScale = 1;
 	const int chip8Width = 64;
 	const int chip8Height = 32;
 	const std::string name = "Chip-8 Emulator";
+	const int cpuHz = 60;
 };
 
 struct settings
@@ -120,6 +121,7 @@ public:
 private:
 	static chip8* instance;
 	config cfg;
+	int instructionsPerSecond;
 	std::default_random_engine randGen;
 	std::uniform_int_distribution<int> randByte;
 

@@ -18,6 +18,7 @@ chip8::chip8()
 	draw_flag = false;
 	delayTimer = 0;
 	soundTimer = 0;
+	instructionsPerSecond = 700;
 
 	randByte = std::uniform_int_distribution<int>(0, 255);
 
@@ -48,6 +49,7 @@ chip8::chip8(const config& cfg)
 	draw_flag = false;
 	delayTimer = 0;
 	soundTimer = 0;
+	instructionsPerSecond = cfg.cpuHz;
 
 	randByte = std::uniform_int_distribution<int>(0, 255);
 
@@ -129,7 +131,7 @@ void chip8::run()
 		}
 		case chip8States::RUNNING:
 		{
-			// Fetch the next instruction
+		
 			emulateCycle();
 			disp.updateDisplay();
 
@@ -189,12 +191,14 @@ void chip8::loadRom(const std::string& romFilepath)
 void chip8::emulateCycle()
 {
 	updateKeys();
+	// loop to emulate the number of cycles per frame
+	for (int i = 0; i < instructionsPerSecond / 60; ++i)
+	{
+		uint16_t opcode = fetchInstruction();
 
-	uint16_t opcode = fetchInstruction();
-
-	pc += 2; // Move to the next instruction
-	executeInstruction(opcode);
-
+		pc += 2; // Move to the next instruction
+		executeInstruction(opcode);
+	}
 	// Decrement the delay timer if it's been set
 	if (delayTimer > 0)
 	{
@@ -388,8 +392,10 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t Vy = getVyRegistry(opcode);
 					uint16_t sum = V[Vx] + V[Vy];
-					V[0xF] = (sum > 0xFF) ? 1 : 0;			  // Set carry flag if overflow occurs
+					uint8_t carry = (sum > 0xFF) ? 1 : 0;
+
 					V[Vx] = static_cast<uint8_t>(sum & 0xFF); // Store the result in Vx, keeping it within 8 bits
+					V[0xF] = carry;							  // Set carry flag if overflow occurs
 					break;
 				}
 				/* SUB Vx, Vy */
@@ -397,18 +403,23 @@ void chip8::executeInstruction(uint16_t opcode)
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t Vy = getVyRegistry(opcode);
-
-					V[0xF] = (V[Vx] > V[Vy]) ? 1 : 0;			 // Set the carry flag if Vx > Vy
-					V[Vx] = static_cast<uint8_t>(V[Vx] - V[Vy]); // Subtract Vy from Vx
+					const uint8_t origX = V[Vx];
+					const uint8_t origY = V[Vy];
+					const uint8_t carry = (origY > origX) ? 0 : 1;
+					V[Vx] = origX - origY;			   // Subtract Vy from Vx#
+					V[0xF] = carry;		   // Set the carry flag if Vx > Vy
+					
 					break;
 				}
 				/* SHR Vx */
 				case 0x6:
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
-
-					V[0xF] = V[Vx] & 0x1u; // Set the carry flag to the least significant bit
-					V[Vx] >>= 1;		   // Shift Vx right by 1 bit (division by 2)
+					const uint8_t origX = V[Vx];
+					
+					const uint8_t carry = V[Vx] & 0x1u;
+					V[Vx] = origX >> 1;	   // Shift Vx right by 1 bit (division by 2)
+					V[0xF] = carry;		// Set the carry flag to the least significant bit
 
 					break;
 				}
@@ -417,16 +428,20 @@ void chip8::executeInstruction(uint16_t opcode)
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t Vy = getVyRegistry(opcode);
-					V[0xF] = (V[Vy] > V[Vx]) ? 1 : 0;			 // Set the carry flag if Vy > Vx
+					const uint8_t carry = (V[Vx] > V[Vy]) ? 0 : 1;
+
 					V[Vx] = static_cast<uint8_t>(V[Vy] - V[Vx]); // Subtract Vx from Vy
+					V[0xF] = carry;			 // Set the carry flag if Vy > Vx
 					break;
 				}
 				/* SHL Vx */
 				case 0xE:
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
-					V[0xF] = (V[Vx] & 0x80u) >> 7u; // Set the carry flag to the most significant bit
+					const uint8_t carry = (V[Vx] & 0x80u) >> 7u;
+
 					V[Vx] <<= 1;					// Shift Vx left by 1 bit (multiplication by 2)
+					V[0xF] = carry; // Set the carry flag to the most significant bit
 					break;
 				}
 				default:
