@@ -131,7 +131,7 @@ void chip8::run()
 		}
 		case chip8States::RUNNING:
 		{
-		
+
 			emulateCycle();
 			disp.updateDisplay();
 
@@ -406,9 +406,9 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t origX = V[Vx];
 					const uint8_t origY = V[Vy];
 					const uint8_t carry = (origY > origX) ? 0 : 1;
-					V[Vx] = origX - origY;			   // Subtract Vy from Vx#
+					V[Vx] = origX - origY; // Subtract Vy from Vx#
 					V[0xF] = carry;		   // Set the carry flag if Vx > Vy
-					
+
 					break;
 				}
 				/* SHR Vx */
@@ -416,9 +416,9 @@ void chip8::executeInstruction(uint16_t opcode)
 				{
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t origX = V[Vx];
-					
+
 					const uint8_t carry = V[Vx] & 0x1u;
-					V[Vx] = origX >> 1;	   // Shift Vx right by 1 bit (division by 2)
+					V[Vx] = origX >> 1; // Shift Vx right by 1 bit (division by 2)
 					V[0xF] = carry;		// Set the carry flag to the least significant bit
 
 					break;
@@ -431,7 +431,7 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t carry = (V[Vx] > V[Vy]) ? 0 : 1;
 
 					V[Vx] = static_cast<uint8_t>(V[Vy] - V[Vx]); // Subtract Vx from Vy
-					V[0xF] = carry;			 // Set the carry flag if Vy > Vx
+					V[0xF] = carry;								 // Set the carry flag if Vy > Vx
 					break;
 				}
 				/* SHL Vx */
@@ -440,7 +440,7 @@ void chip8::executeInstruction(uint16_t opcode)
 					const uint8_t Vx = getVxRegistry(opcode);
 					const uint8_t carry = (V[Vx] & 0x80u) >> 7u;
 
-					V[Vx] <<= 1;					// Shift Vx left by 1 bit (multiplication by 2)
+					V[Vx] <<= 1;	// Shift Vx left by 1 bit (multiplication by 2)
 					V[0xF] = carry; // Set the carry flag to the most significant bit
 					break;
 				}

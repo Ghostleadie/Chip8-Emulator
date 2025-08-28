@@ -17,7 +17,7 @@ int main()
 {
 	// Initialization
 	//--------------------------------------------------------------------------------------
-	config cfg(64,32,20, 700);
+	config cfg(64, 32, 20, 700);
 	chip8* chip8 = &chip8::Get(cfg);
 	InitWindow(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale, cfg.name.c_str());
 	SetTargetFPS(60); // Set our game to run at 60 frames-per-second
