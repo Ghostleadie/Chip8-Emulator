@@ -147,7 +147,6 @@ void chip8::run()
 				disp.updateDisplay();
 				draw_flag = false;
 			}
-			
 
 			break;
 		}
