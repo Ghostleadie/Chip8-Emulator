@@ -23,4 +23,11 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<CONFIG:Debug>:DEBUG_BUILD
 # Adds MINGW_BUILD define to this target only when using MinGW
 target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<BOOL:${MINGW}>:MINGW_BUILD>)
 
+add_custom_command(TARGET Chip8-Emulator POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:Chip8-Emulator>/sound"
+  COMMAND ${CMAKE_COMMAND} -E copy_directory
+          "${CMAKE_SOURCE_DIR}/sound"
+          "$<TARGET_FILE_DIR:Chip8-Emulator>/sound"
+)
+
 # TODO: Add tests and install targets if needed.

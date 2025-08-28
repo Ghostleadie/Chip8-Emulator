@@ -37,6 +37,8 @@ chip8::chip8()
 	// resetting display and keypad
 	memset(screen, 0, sizeof(screen));
 	memset(keypad, 0, sizeof(keypad));
+
+	beep = LoadSound("sound\\beep.wav");
 }
 
 chip8::chip8(const config& cfg)
@@ -74,6 +76,13 @@ chip8::chip8(const config& cfg)
 	disp.setTitle("CHIP-8 Emulator");
 	disp.setSize(cfg.chip8Width * cfg.windowScale, cfg.chip8Height * cfg.windowScale);
 	disp.setFullscreen(false);
+
+	beep = LoadSound("sound\\beep.wav");
+}
+
+chip8::~chip8()
+{
+	UnloadSound(beep);
 }
 
 // Internal storage for the global chip8 instance (shared by all getters)
@@ -133,7 +142,12 @@ void chip8::run()
 		{
 
 			emulateCycle();
-			disp.updateDisplay();
+			if (draw_flag == true)
+			{
+				disp.updateDisplay();
+				draw_flag = false;
+			}
+			
 
 			break;
 		}
@@ -208,6 +222,10 @@ void chip8::emulateCycle()
 	// Decrement the sound timer if it's been set
 	if (soundTimer > 0)
 	{
+		if (soundTimer == 1)
+		{
+			PlaySound(beep);
+		}
 		--soundTimer;
 	}
 }
@@ -265,7 +283,7 @@ void chip8::executeInstruction(uint16_t opcode)
 				{
 					// Clears the screen.
 					memset(screen, 0, sizeof(screen));
-
+					draw_flag = true;
 					break;
 				}
 				case 0x00EE:
@@ -489,10 +507,6 @@ void chip8::executeInstruction(uint16_t opcode)
 			uint8_t Vy = getVyRegistry(opcode);
 			uint8_t height = opcode & 0x000Fu; // Get the height of the sprite to draw
 
-			// need to replace without hard coded values
-			// uint8_t xPos = V[Vx] % 64; // Wrap around the screen width
-			// uint8_t yPos = V[Vy] % 32; // Wrap around the screen height
-
 			V[0xF] = 0; // Clear the collision flag
 			for (uint8_t row = 0; row < height; ++row)
 			{
@@ -512,7 +526,7 @@ void chip8::executeInstruction(uint16_t opcode)
 					}
 				}
 			}
-
+			draw_flag = true; // Indicate that the screen needs to be redrawn
 			break;
 		}
 		case 0xE000:

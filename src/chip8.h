@@ -38,6 +38,7 @@ class chip8
 public:
 	chip8();
 	chip8(const config& cfg);
+	~chip8();
 	static chip8& Get();
 	static chip8& Get(const config& cfg);
 	void run();
@@ -124,6 +125,8 @@ private:
 	int instructionsPerSecond;
 	std::default_random_engine randGen;
 	std::uniform_int_distribution<int> randByte;
+
+	Sound beep;
 
 	inline uint8_t getVxRegistry(const uint16_t opcode)
 	{
