@@ -22,7 +22,7 @@ public:
 	mainMenuResult drawMainMenu(bool& showFileDialog, std::string& selectedFile);
 	void drawChip8DebugWindow(const chip8& cpu, bool* showWindow);
 	void fileDialogBox(bool& showFileDialog, std::string& selectedFile);
-	void drawSettingsMenu(bool& showSettingsMenu, float& volume);
+	void drawpauseMenu(chip8* instance);
 
 private:
 	bool showFileDialog = false; // Toggle for file dialog

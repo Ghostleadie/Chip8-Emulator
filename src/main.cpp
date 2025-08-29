@@ -27,7 +27,7 @@ int main()
 	// chip8.load_rom("F:\\Git Projects\\Chip8-Emulator\\rom\\IBM Logo.ch8");
 
 	// Main game loop
-	while (!WindowShouldClose() || chip8->state == QUIT) // Detect window close button or ESC key
+	while (!WindowShouldClose()) // Detect window close button or ESC key
 	{
 		BeginDrawing();
 		chip8->run();

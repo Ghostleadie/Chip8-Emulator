@@ -10,7 +10,7 @@
 
 gui::gui()
 {
-	// chip8Instance = chip8::getInstance();
+	
 }
 
 void gui::run(chip8* instance)
@@ -28,7 +28,7 @@ void gui::run(chip8* instance)
 		}
 		if (menuResult == MENU_QUIT)
 		{
-			// break;
+			instance->state = chip8States::QUIT;
 		}
 	}
 }
@@ -44,7 +44,7 @@ mainMenuResult gui::drawMainMenu(bool& showFileDialog, std::string& selectedFile
 	// Center menu on screen
 	int screenWidth = GetScreenWidth();
 	int screenHeight = GetScreenHeight();
-	Rectangle menuBox = { screenWidth / 2.0f - 120, screenHeight / 2.0f - 120, 240, 240 };
+	Rectangle menuBox = { screenWidth / 2.0f - 100, screenHeight / 2.0f - 100, 240, 180 };
 
 	GuiPanel(menuBox, "Main Menu");
 
@@ -54,18 +54,6 @@ mainMenuResult gui::drawMainMenu(bool& showFileDialog, std::string& selectedFile
 		showFileDialog = true;
 		result = MENU_LOAD;
 		ClearBackground(BLACK);
-	}
-	btnY += 40;
-	if (GuiButton({ menuBox.x + 60, btnY, 120, 30 }, "Settings"))
-	{
-		result = MENU_SETTINGS;
-		bool showSettingsMenu = false;
-		// drawSettingsMenu(showSettingsMenu, temp);
-	}
-	btnY += 40;
-	if (GuiButton({ menuBox.x + 60, btnY, 120, 30 }, "About"))
-	{
-		result = MENU_ABOUT;
 	}
 	btnY += 40;
 	if (GuiButton({ menuBox.x + 60, btnY, 120, 30 }, "Quit"))
@@ -174,22 +162,53 @@ void gui::drawChip8DebugWindow(const chip8& cpu, bool* showWindow)
 		}
 	}
 
-	// Opcode history list
-	float listY = y + 80;
+	// Opcode history (scrollable)
+	float listY = y + 20;
 	GuiLabel({ x, listY, 360, 20 }, "Opcode History:");
-	listY += 20;
-	int maxOpcodes = 10; // Show last 10 opcodes
-	int start = std::max(0, (int)cpu.opcode_history.size() - maxOpcodes);
-	for (int i = start; i < cpu.opcode_history.size(); ++i)
+	listY += 24;
+
+	// Scroll panel setup
+	static Vector2 scroll = { 0, 0 }; // persists across frames
+	static int lastCount = 0;		  // for auto-scroll to bottom on new items
+	const float rowHeight = 20.0f;
+
+	Rectangle panelBounds = { x, listY, debugBox.width - 40, 180 }; // visible area
+	int count = (int)cpu.opcode_history.size();
+	float contentHeight = count * rowHeight;
+	// Leave some room for the vertical scrollbar
+	Rectangle content = { 0, 0, panelBounds.width - 14, contentHeight };
+	Rectangle view = { 0 };
+
+	GuiScrollPanel(panelBounds, "test", content, &scroll, &view);
+
+	// Autoscroll to bottom when new opcodes were appended
+	if (count > lastCount)
 	{
-		GuiLabel({ x, listY + (i - start) * 20, 180, 20 }, TextFormat("%04X", cpu.opcode_history[i]));
+		float maxScrollY = -(contentHeight - panelBounds.height);
+		if (contentHeight > panelBounds.height)
+			scroll.y = maxScrollY;
+		lastCount = count;
 	}
 
-	// Optional: Close button
-	if (GuiButton({ debugBox.x + debugBox.width - 90, debugBox.y + debugBox.height - 40, 80, 30 }, "Close"))
+	// Clip to the scroll panel view and draw inner labels offset by scroll
+	BeginScissorMode((int)view.x, (int)view.y, (int)view.width, (int)view.height);
 	{
-		*showWindow = false;
+		float innerX = panelBounds.x + scroll.x + 6; // small left padding
+		float innerY = panelBounds.y + scroll.y;
+
+		// Optionally compute a visible range to avoid drawing everything
+		int firstVisible = (int)std::floorf((-scroll.y) / rowHeight) - 1;
+		firstVisible = std::max(0, firstVisible);
+		int lastVisible = (int)std::ceilf((-scroll.y + panelBounds.height) / rowHeight) + 1;
+		lastVisible = std::min(count, lastVisible);
+
+		for (int i = firstVisible; i < lastVisible; ++i)
+		{
+			GuiLabel({ innerX, innerY + i * rowHeight, content.width - 8, rowHeight },
+				TextFormat("%04X", cpu.opcode_history[i]));
+		}
 	}
+	EndScissorMode();
 }
 
 void gui::fileDialogBox(bool& showFileDialog, std::string& selectedFile)
@@ -211,30 +230,68 @@ void gui::fileDialogBox(bool& showFileDialog, std::string& selectedFile)
 	}
 }
 
-void gui::drawSettingsMenu(bool& showSettingsMenu, float& volume)
+void gui::drawpauseMenu(chip8* instance)
 {
-	if (!showSettingsMenu)
-		return;
+	// Centered pause panel
+	int sw = GetScreenWidth();
+	int sh = GetScreenHeight();
+	Rectangle box = { sw / 2.0f - 120, sh / 2.0f - 90, 240, 160 };
+	GuiPanel(box, "Paused");
 
-	int screenWidth = GetScreenWidth();
-	int screenHeight = GetScreenHeight();
-	Rectangle settingsBox = { screenWidth / 2.0f - 150, screenHeight / 2.0f - 100, 300, 200 };
+	static bool showFileDialog = false;
+	static bool fileDialogOpen = false;
 
-	GuiPanel(settingsBox, "Settings");
-
-	float sliderY = settingsBox.y + 50;
-	float sliderX = settingsBox.x + 30;
-	float sliderWidth = 240;
-
-	GuiLabel({ sliderX, sliderY - 30, sliderWidth, 20 }, "Audio Settings");
-	GuiLabel({ sliderX, sliderY, 80, 20 }, "Volume");
-
-	// Raygui slider expects float* for value, min, max
-	volume = GuiSlider({ sliderX + 90, sliderY, 120, 20 }, "0", "1", &volume, 0.0f, 1.0f);
-
-	// Optional: Close button
-	if (GuiButton({ settingsBox.x + settingsBox.width - 90, settingsBox.y + settingsBox.height - 40, 80, 30 }, "Back"))
+	float btnY = box.y + 40;
+	// Load ROM button
+	if (GuiButton({ box.x + 60, btnY, 120, 30 }, "Load ROM"))
 	{
-		showSettingsMenu = false;
+		showFileDialog = true;
+	}
+	btnY += 40;
+	// return to menu button
+	if (GuiButton({ box.x + 60, btnY, 120, 30 }, "Return To Menu"))
+	{
+		instance->resetChip8();
+		instance->state = chip8States::MENU;
+	}
+	btnY += 40;
+	// Quit button
+	if (GuiButton({ box.x + 60, btnY, 120, 30 }, "Quit"))
+	{
+		instance->state = chip8States::QUIT;
+	}
+
+	// Handle file dialog
+	if (showFileDialog)
+	{
+		fileDialogOpen = true;
+		showFileDialog = false;
+	}
+
+	if (fileDialogOpen)
+	{
+		NFD_Init();
+		nfdu8char_t* outPath = nullptr;
+		nfdu8filteritem_t filters[1] = { { "Roms", "ch8" } };
+		nfdopendialogu8args_t args = { 0 };
+		args.filterList = filters;
+		args.filterCount = 1;
+		nfdresult_t r = NFD_OpenDialogU8_With(&outPath, &args);
+		if (r == NFD_OKAY)
+		{
+			instance->filepath = outPath;
+			NFD_FreePathU8(outPath);
+			// Reset, load, and resume
+			instance->resetChip8();
+			instance->loadRom(instance->filepath);
+			instance->state = chip8States::RUNNING;
+		}
+		else if (r == NFD_ERROR)
+		{
+			LOG_ERROR("PauseMenu: %s", NFD_GetError());
+		}
+		fileDialogOpen = false;
+		NFD_Quit();
 	}
 }
+

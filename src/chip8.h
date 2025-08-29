@@ -16,15 +16,6 @@ struct config
 	const int cpuHz = 60;
 };
 
-struct settings
-{
-	const int fps = 60;
-	const int soundFrequency = 44100;
-	const int soundBufferSize = 512;
-	const int soundChannels = 2;	// Stereo
-	const int soundSampleSize = 16; // 16-bit samples
-};
-
 enum chip8States
 {
 	MENU = 0,
@@ -41,10 +32,12 @@ public:
 	~chip8();
 	static chip8& Get();
 	static chip8& Get(const config& cfg);
+	void resetChip8();
 	void run();
 	void loadRom(const std::string& filepath);
 	void emulateCycle();
 	void updateKeys();
+	void checkNonChip8Inputs();
 
 	chip8(const chip8& obj) = delete;
 

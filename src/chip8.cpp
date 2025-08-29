@@ -109,27 +109,39 @@ chip8& chip8::Get(const config& cfg)
 	return *p;
 }
 
-void chip8::run()
+void chip8::resetChip8()
 {
-	if (IsKeyPressed(KEY_SPACE))
+	// Initialize the Chip-8 system with configuration
+	pc = 0x200; // Program counter starts at 0x200
+	I = 0;		// Index register
+	sp = 0;		// Stack pointer
+	draw_flag = false;
+	delayTimer = 0;
+	soundTimer = 0;
+	instructionsPerSecond = 700;
+
+	randByte = std::uniform_int_distribution<int>(0, 255);
+
+	memset(V, 0, sizeof(V));
+	memset(stack, 0, sizeof(stack));
+	memset(memory, 0, sizeof(memory));
+
+	// Load the font set into memory at the specified address
+	for (unsigned int i = 0; i < sizeof(fontSet); ++i)
 	{
-		if (state == chip8States::RUNNING)
-		{
-			state = chip8States::PAUSED;
-			LOG("Paused the emulator");
-		}
-		else if (state == chip8States::PAUSED)
-		{
-			state = chip8States::RUNNING;
-			LOG("Resumed the emulator");
-		}
+		memory[fontSetStartAddress + i] = fontSet[i];
 	}
 
-	// debug options
-	if (IsKeyPressed(KEY_GRAVE))
-	{
-		showDebugWindow = !showDebugWindow;
-	}
+	LOG("Font loaded into memory starting at address 0x&U", fontSetStartAddress);
+
+	// resetting display and keypad
+	memset(screen, 0, sizeof(screen));
+	memset(keypad, 0, sizeof(keypad));
+}
+
+void chip8::run()
+{
+	checkNonChip8Inputs();
 
 	switch (state)
 	{
@@ -152,8 +164,14 @@ void chip8::run()
 		}
 		case chip8States::PAUSED:
 		{
+			disp.updateDisplay();
+			guiInstance.drawpauseMenu(this);
 			// Do nothing, just wait for unpause
 			break;
+		}
+		case chip8States::QUIT:
+		{
+			CloseWindow();
 		}
 		default:
 		{
@@ -169,30 +187,41 @@ void chip8::loadRom(const std::string& romFilepath)
 {
 	try
 	{
-		// Open the file as a stream of binary and move the file pointer to the end
+		//bounded direct read
 		std::ifstream file(romFilepath, std::ios::binary | std::ios::ate);
-
-		if (file.is_open())
+		if (!file.is_open())
 		{
-			// Get size of file and allocate a buffer to hold the contents
-			std::streampos size = file.tellg();
-			char* buffer = new char[size];
+			LOG_ERROR("Failed to open ROM");
+			return;
+		}
 
-			// Go back to the beginning of the file and fill the buffer
-			file.seekg(0, std::ios::beg);
-			file.read(buffer, size);
+		const std::streamsize romSize = static_cast<std::streamsize>(file.tellg());
+		file.seekg(0, std::ios::beg);
 
-			// Load the ROM contents into the Chip8's memory, starting at 0x200
-			for (long i = 0; i < size; ++i)
-			{
-				memory[entryPoint + i] = buffer[i];
-			}
-			file.seekg(0, file.end);
-			const char* pathname = romFilepath.c_str();
-			LOG("Loaded ROM: %s (%f.3 bytes)", pathname, static_cast<float>(file.tellg()));
-			file.close();
-			// Free the buffer
-			delete[] buffer;
+		const std::size_t capacity = sizeof(memory) - static_cast<std::size_t>(entryPoint);
+		// Clamp the number of bytes to read so we never write past the end of memory.
+		const std::size_t toLoad = std::min<std::size_t>(static_cast<std::size_t>(romSize), capacity);
+
+		if (toLoad == 0)
+		{
+			LOG_ERROR("ROM too large or no capacity");
+			return;
+		}
+
+		// Read ROM bytes directly into the memory window starting at 0x200.
+		file.read(reinterpret_cast<char*>(memory + entryPoint), static_cast<std::streamsize>(toLoad));
+
+		if (!file)
+		{
+			LOG_ERROR("ROM read failed: read %lld of %zu bytes", static_cast<long long>(file.gcount()), toLoad);
+		}
+		else if (toLoad < static_cast<std::size_t>(romSize))
+		{
+			LOG_ERROR("ROM truncated: %zu bytes didn't fit", static_cast<std::size_t>(romSize) - toLoad);
+		}
+		else
+		{
+			LOG("Loaded ROM: %s (%lld bytes)", romFilepath.c_str(), static_cast<long long>(romSize));
 		}
 	}
 	catch (const std::exception& e)
@@ -221,11 +250,18 @@ void chip8::emulateCycle()
 	// Decrement the sound timer if it's been set
 	if (soundTimer > 0)
 	{
-		if (soundTimer == 1)
+		if (!IsSoundPlaying(beep))
 		{
 			PlaySound(beep);
 		}
-		--soundTimer;
+		soundTimer--;
+	}
+	else
+	{
+		if (IsSoundPlaying(beep))
+		{
+			StopSound(beep);
+		}
 	}
 }
 
@@ -262,6 +298,57 @@ void chip8::updateKeys()
 	}
 }
 
+void chip8::checkNonChip8Inputs()
+{
+	//pause
+	if (IsKeyPressed(KEY_SPACE))
+	{
+		if (state == chip8States::RUNNING)
+		{
+			state = chip8States::PAUSED;
+			LOG("Paused the emulator");
+		}
+		else if (state == chip8States::PAUSED)
+		{
+			state = chip8States::RUNNING;
+			LOG("Resumed the emulator");
+		}
+	}
+
+	// debug menu
+	if (IsKeyPressed(KEY_GRAVE))
+	{
+		showDebugWindow = !showDebugWindow;
+	}
+
+	//mute audio
+	if (IsKeyPressed(KEY_M))
+	{
+		if (GetMasterVolume() == 0)
+		{
+			SetMasterVolume(100);
+		}
+		else
+		{
+			SetMasterVolume(0);
+		}
+	}
+	
+	if (IsKeyPressed(KEY_P))
+	{
+		if (state == RUNNING)
+		{
+			state = PAUSED;
+		}
+		else if (state == PAUSED)
+		{
+			state = RUNNING;
+		}
+		
+		
+	}
+}
+
 uint16_t chip8::fetchInstruction()
 {
 	const uint16_t opcode = (memory[pc] << 8u) | (memory[pc + 1]);
@@ -271,7 +358,7 @@ uint16_t chip8::fetchInstruction()
 
 void chip8::executeInstruction(uint16_t opcode)
 {
-	LOG("Opcode: 0x%x", opcode);
+	//LOG("Opcode: 0x%x", opcode);
 	// Decode and execute the opcode
 	switch (opcode & 0xF000)
 	{
@@ -292,9 +379,11 @@ void chip8::executeInstruction(uint16_t opcode)
 					break;
 				}
 				default:
+				{
 					LOG_ERROR("Unknown opcode [0x0000]: 0x%X", opcode);
 					/* SYS addr */
 					break;
+				}
 			}
 			break;
 		/* JP addr */
