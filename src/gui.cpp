@@ -10,7 +10,6 @@
 
 gui::gui()
 {
-	
 }
 
 void gui::run(chip8* instance)
@@ -294,4 +293,3 @@ void gui::drawpauseMenu(chip8* instance)
 		NFD_Quit();
 	}
 }
-

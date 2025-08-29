@@ -187,7 +187,7 @@ void chip8::loadRom(const std::string& romFilepath)
 {
 	try
 	{
-		//bounded direct read
+		// bounded direct read
 		std::ifstream file(romFilepath, std::ios::binary | std::ios::ate);
 		if (!file.is_open())
 		{
@@ -300,7 +300,7 @@ void chip8::updateKeys()
 
 void chip8::checkNonChip8Inputs()
 {
-	//pause
+	// pause
 	if (IsKeyPressed(KEY_SPACE))
 	{
 		if (state == chip8States::RUNNING)
@@ -321,7 +321,7 @@ void chip8::checkNonChip8Inputs()
 		showDebugWindow = !showDebugWindow;
 	}
 
-	//mute audio
+	// mute audio
 	if (IsKeyPressed(KEY_M))
 	{
 		if (GetMasterVolume() == 0)
@@ -333,7 +333,7 @@ void chip8::checkNonChip8Inputs()
 			SetMasterVolume(0);
 		}
 	}
-	
+
 	if (IsKeyPressed(KEY_P))
 	{
 		if (state == RUNNING)
@@ -344,8 +344,6 @@ void chip8::checkNonChip8Inputs()
 		{
 			state = RUNNING;
 		}
-		
-		
 	}
 }
 
@@ -358,8 +356,8 @@ uint16_t chip8::fetchInstruction()
 
 void chip8::executeInstruction(uint16_t opcode)
 {
-	//LOG("Opcode: 0x%x", opcode);
-	// Decode and execute the opcode
+	// LOG("Opcode: 0x%x", opcode);
+	//  Decode and execute the opcode
 	switch (opcode & 0xF000)
 	{
 		case 0x0000: // 0x00E0, 0x00EE
